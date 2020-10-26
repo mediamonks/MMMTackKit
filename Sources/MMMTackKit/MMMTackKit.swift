@@ -3,123 +3,198 @@
 // Copyright (C) 2015-2020 MediaMonks. All rights reserved.
 //
 
-infix operator |-- : TackKitPrecedence
-infix operator --* : TackKitPrecedence
-infix operator *-- : TackKitPrecedence
-postfix operator --|
+prefix operator |-
+postfix operator -|
 
-precedencegroup TackKitPrecedence {
-	lowerThan: AdditionPrecedence
-	associativity: left
+// |-(padding)-[view]
+
+public prefix func |- (padding: CGFloat) -> TackKit.SuperviewPadding {
+	return .init(padding: ._eq(padding, .required))
+}
+
+public prefix func |- (padding: TackKit.Padding) -> TackKit.SuperviewPadding {
+	return .init(padding: padding)
+}
+
+public func - (lhs: TackKit.SuperviewPadding, view: UIView) -> TackKit.Chain {
+	return .init(
+		pairs: [.init(lhs: .leading(view.superview!), padding: lhs.padding, rhs: .leading(view))],
+		trailing: .trailing(view)
+	)
+}
+
+// [viewA]-(padding)-[viewB]
+
+public func - (lhs: UIView, rhs: TackKit.Padding) -> TackKit.ViewPadding {
+	return .init(view: lhs, padding: rhs)
+}
+
+public func - (lhs: UIView, rhs: CGFloat) -> TackKit.ViewPadding {
+	return .init(view: lhs, padding: ._eq(rhs, .required))
+}
+
+public func - (lhs: TackKit.ViewPadding, rhs: UIView) -> TackKit.Chain {
+	return .init(
+		pairs: [.init(lhs: .trailing(lhs.view), padding: lhs.padding, rhs: .leading(rhs))],
+		trailing: .trailing(rhs)
+	)
+}
+
+public func - (lhs: TackKit.Chain, rhs: TackKit.Padding) -> TackKit.ChainPadding {
+	return .init(chain: lhs, padding: rhs)
+}
+
+public func - (lhs: TackKit.Chain, rhs: CGFloat) -> TackKit.ChainPadding {
+	return .init(chain: lhs, padding: ._eq(rhs, .required))
+}
+
+public func - (lhs: TackKit.ChainPadding, rhs: UIView) -> TackKit.Chain {
+	return .init(
+		pairs: lhs.chain.pairs + [.init(lhs: lhs.chain.trailing, padding: lhs.padding, rhs: .leading(rhs))],
+		trailing: .trailing(rhs)
+	)
+}
+
+// [view]-(padding)-|
+
+public postfix func -| (padding: TackKit.Padding) -> TackKit.PaddingSuperview {
+	return .init(padding: padding)
+}
+
+public postfix func -| (padding: CGFloat) -> TackKit.PaddingSuperview {
+	return .init(padding: .eq(padding))
+}
+
+public func - (lhs: UIView, rhs: TackKit.PaddingSuperview) -> TackKit.Chain {
+	return .init(
+		pairs: [.init(lhs: .trailing(lhs), padding: rhs.padding, rhs: .trailing(lhs.superview!))],
+		trailing: .trailing(lhs.superview!)
+	)
+}
+
+public func - (chain: TackKit.Chain, rhs: TackKit.PaddingSuperview) -> TackKit.Chain {
+	return .init(
+		pairs: chain.pairs + [.init(lhs: chain.trailing, padding: rhs.padding, rhs: .trailing(chain.trailing.view.superview!))],
+		trailing: .trailing(chain.trailing.view.superview!)
+	)
 }
 
 public enum TackKit {
 
+	public static func H(_ chain: Chain) -> [NSLayoutConstraint] {
+		return chain.axis(.horizontal)
+	}
+	
+	public static func V(_ chain: Chain) -> [NSLayoutConstraint] {
+		return chain.axis(.vertical)
+	}
+
 	public enum Padding {
 
-		case eq(CGFloat, Int)
-		case ge(CGFloat, Int)
+		public static func eq(_ value: CGFloat, _ priority: UILayoutPriority = .required) -> Padding {
+			return ._eq(value, priority)
+		}
 
-		func simple() -> (NSLayoutConstraint.Relation, CGFloat, UILayoutPriority)? {
+		public static func ge(_ value: CGFloat, _ priority: UILayoutPriority = .required) -> Padding {
+			return ._ge(value, priority)
+		}
+
+		/// (To allow using regular floats without casing to UILayoutPriority.)
+		public static func eq(_ value: CGFloat, _ priority: Float) -> Padding {
+			return ._eq(value, UILayoutPriority(priority))
+		}
+
+		/// (To allow using regular floats without casing to UILayoutPriority.)
+		public static func ge(_ value: CGFloat, _ priority: Float) -> Padding {
+			return ._ge(value, UILayoutPriority(priority))
+		}
+
+		case _eq(CGFloat, UILayoutPriority)
+		case _ge(CGFloat, UILayoutPriority)
+
+		internal func resolved() -> (NSLayoutConstraint.Relation, CGFloat, UILayoutPriority) {
 			switch self {
-			case let .eq(padding, priority):
-				return (.equal, padding, UILayoutPriority(Float(priority)))
-			case let .ge(padding, priority):
-				return (.greaterThanOrEqual, padding, UILayoutPriority(Float(priority)))
+			case let ._eq(value, prio):
+				return (.equal, value, prio)
+			case let ._ge(value, prio):
+				return (.greaterThanOrEqual, value, prio)
 			}
 		}
 	}
 
-	public enum View {
-
-		case superview
-		case view(UIView)
-
-		func resolved(withRight right: UIView) -> (UIView, NSLayoutConstraint.Attribute) {
-			switch self {
-			case .view(let v):
-				return (v, NSLayoutConstraint.Attribute.trailing)
-			case .superview:
-				return (right.superview!, NSLayoutConstraint.Attribute.leading)
-			}
-		}
-	}
-
-	public struct Context {
-
-		let view: View
-		let constraints: [NSLayoutConstraint]
-
-		func copy(withView view: View, appendingConstraints constraints: [NSLayoutConstraint]) -> Context {
-			var c = self.constraints
-			c.append(contentsOf: constraints)
-			return Context(view: view, constraints: c)
-		}
-	}
-
-	public struct Horizontal {
-	
-		let context: Context?
-
-		public func constraints() -> [NSLayoutConstraint] {
-			return context?.constraints ?? []
-		}
-	}
-
-	public static let H = Horizontal(context: nil)
-
-	public struct SuperviewRight {
+	public struct SuperviewPadding {
 		let padding: Padding
 	}
-}
 
-public func |-- (lhs: TackKit.Horizontal, padding: CGFloat) -> (TackKit.Horizontal, padding: TackKit.Padding) {
-	return (
-		TackKit.Horizontal(context: TackKit.Context(view: .superview, constraints: [])),
-		padding: .eq(padding, 1000)
-	)
-}
-
-public func |-- (lhs: TackKit.Horizontal, padding: TackKit.Padding) -> (TackKit.Horizontal, padding: TackKit.Padding) {
-	return (
-		TackKit.Horizontal(context: TackKit.Context(view: .superview, constraints: [])),
-		padding: padding
-	)
-}
-
-public func & (lhs: TackKit.Horizontal, rhs: UIView) -> TackKit.Horizontal {
-	return TackKit.Horizontal(context: TackKit.Context(view: .view(rhs), constraints: []))
-}
-
-public func *-- (lhs: TackKit.Horizontal, rhs: TackKit.Padding) -> (TackKit.Horizontal, padding: TackKit.Padding) {
-	return (lhs, padding: rhs)
-}
-
-public func --* (lhs: (TackKit.Horizontal, padding: TackKit.Padding), rhs: UIView) -> TackKit.Horizontal {
-
-	guard let context = lhs.0.context else {
-		preconditionFailure()
+	public struct ViewPadding {
+		let view: UIView
+		let padding: Padding
 	}
 
-	let (view, attr) = context.view.resolved(withRight: rhs)
-
-	if let (relation, padding, priority) = lhs.padding.simple() {
-
-		let c = NSLayoutConstraint(
-			item: rhs, attribute: .leading,
-			relatedBy: relation,
-			toItem: view, attribute: attr,
-			multiplier: 1, constant: padding
-		)
-		c.priority = priority
-
-		return TackKit.Horizontal(context: context.copy(withView: .view(rhs), appendingConstraints: [c]))
-
-	} else {
-		preconditionFailure()
+	public struct PaddingSuperview {
+		let padding: Padding
 	}
-}
 
-public postfix func --| (lhs: TackKit.Padding) -> TackKit.SuperviewRight {
-	return TackKit.SuperviewRight(padding: lhs)
+	public enum Side {
+
+		case leading(UIView)
+		case trailing(UIView)
+
+		var view: UIView {
+			switch self {
+			case let .leading(view), let .trailing(view):
+				return view
+			}
+		}
+
+		internal func resolved(axis: NSLayoutConstraint.Axis) -> (UIView, NSLayoutConstraint.Attribute) {
+			switch axis {
+			case .horizontal:
+				switch self {
+				case let .leading(v):
+					return (v, .leading)
+				case let .trailing(v):
+					return (v, .trailing)
+				}
+			case .vertical:
+				switch self {
+				case let .leading(v):
+					return (v, .top)
+				case let .trailing(v):
+					return (v, .bottom)
+				}
+			}
+		}
+	}
+
+	public struct Pair {
+		let lhs: Side
+		let padding: Padding
+		let rhs: Side
+	}
+
+	public struct Chain {
+
+		let pairs: [Pair]
+		let trailing: Side // TODO: use the last view instead
+
+		public func axis(_ axis: NSLayoutConstraint.Axis) -> [NSLayoutConstraint] {
+			return pairs.map { pair in
+				let lhs = pair.lhs.resolved(axis: axis)
+				let padding = pair.padding.resolved()
+				let rhs = pair.rhs.resolved(axis: axis)
+				return NSLayoutConstraint(
+					item: rhs.0, attribute: rhs.1,
+					relatedBy: padding.0,
+					toItem: lhs.0, attribute: lhs.1,
+					multiplier: 1, constant: padding.1
+				)
+			}
+		}
+	}
+
+	public struct ChainPadding {
+		let chain: Chain
+		let padding: Padding
+	}
 }

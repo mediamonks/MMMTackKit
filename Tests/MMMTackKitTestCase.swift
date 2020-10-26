@@ -22,8 +22,10 @@ class TackKitTestCase: XCTestCase {
 		super.setUp()
 
 		container = UIView()
+
 		viewA = UIView()
 		container.addSubview(viewA)
+
 		viewB = UIView()
 		container.addSubview(viewB)
 
@@ -34,41 +36,43 @@ class TackKitTestCase: XCTestCase {
 	func assertEqual(_ a: NSLayoutConstraint, _ b: NSLayoutConstraint) {
 
 		if (a.firstItem === b.firstItem && a.secondItem === b.secondItem) {
-			XCTAssertEqual(a.firstAttribute.rawValue, b.firstAttribute.rawValue)
-			XCTAssertEqual(a.secondAttribute.rawValue, b.secondAttribute.rawValue)
+
+			XCTAssertEqual(a.firstAttribute, b.firstAttribute)
+			XCTAssertEqual(a.secondAttribute, b.secondAttribute)
 			XCTAssertEqual(a.multiplier, b.multiplier)
+
 			XCTAssertEqual(a.constant, b.constant)
+			XCTAssertEqual(a.relation, b.relation)
+
 		} else if (a.firstItem === b.secondItem && a.secondItem === b.firstItem) {
-			XCTAssertEqual(a.firstAttribute.rawValue, b.secondAttribute.rawValue)
-			XCTAssertEqual(a.secondAttribute.rawValue, b.firstAttribute.rawValue)
+
+			XCTAssertEqual(a.firstAttribute, b.secondAttribute)
+			XCTAssertEqual(a.secondAttribute, b.firstAttribute)
 			XCTAssertEqual(a.multiplier, 1 / b.multiplier)
 			XCTAssertEqual(a.constant, -b.constant)
+
+			func opposite(_ r: NSLayoutConstraint.Relation) -> NSLayoutConstraint.Relation {
+				switch r {
+				case .equal:
+					return .equal
+				case .greaterThanOrEqual:
+					return .lessThanOrEqual
+				case .lessThanOrEqual:
+					return .greaterThanOrEqual
+				}
+			}
+			XCTAssertEqual(a.relation, opposite(b.relation))
+
 		} else {
 			XCTFail("Constraints differ in their items")
 		}
 	}
 
 	func assertEqualConstraints(_ a: [NSLayoutConstraint], _ b: [NSLayoutConstraint]) {
-
-		if a.count != b.count {
-			XCTFail("Number of constraints differs: \(a.count) vs \(b.count)")
-			return
-		}
-
-		for i in 0..<a.count {
+		XCTAssertEqual(a.count, b.count, "Expected the same number of constraints")
+		for i in a.indices {
 			assertEqual(a[i], b[i])
 		}
-	}
-
-	private func withTack(_ tack: TackKit.Horizontal) -> [NSLayoutConstraint] {
-		return tack.constraints()
-	}
-
-	private func withFormat(_ visualFormat: String) -> [NSLayoutConstraint] {
-		return NSLayoutConstraint.constraints(
-			withVisualFormat: visualFormat,
-			options: [], metrics: metrics, views: views
-		)
 	}
 
 	private let iterations = 10000
@@ -76,54 +80,94 @@ class TackKitTestCase: XCTestCase {
 	@objc func testVisualLayoutPerformance() {
 		self.measure {
 			for _ in 1...iterations {
-				let _ = withFormat("H:|-(>=padding@700)-[viewA]-(padding)-[viewB]")
+				let _ = NSLayoutConstraint.constraints(
+					withVisualFormat: "H:|-(>=padding@749)-[viewA]-(padding)-[viewB]",
+					options: [], metrics: metrics, views: views
+				)
 			}
 		}
 	}
 
-	@objc func testTackPerformance() {
+	@objc func testTackKitPerformance() {
 		self.measure {
 			for _ in 1...iterations {
-				let _ = withTack(TackKit.H |-- .ge(padding, 700) --* viewA *-- .eq(padding, 1000) --* viewB )
+				let _ = TackKit.H(|-(.ge(padding, .defaultHigh - 1))-viewA-(.eq(padding, .required))-viewB)
 			}
 		}
+	}
+
+	// Not really a test, just to check if different combinations compile.
+	func testBuilding() {
+
+		print(TackKit.H(|-.eq(padding)-viewA))
+		print(TackKit.H(|-(padding)-viewA))
+		print(TackKit.H(|-padding-viewA))
+
+		print((viewA-(.eq(padding))-viewB))
+		print((viewA-(padding)-viewB))
+		print((viewA-padding-viewB))
+
+		print((viewB-(.eq(padding))-|))
+		print((viewB-(padding)-|))
+		print((viewB-padding-|))
 	}
 
 	func testBasics() {
+		let axes: [(String, NSLayoutConstraint.Axis)] = [
+			("H:", .horizontal),
+			("V:", .vertical)
+		]
+		for axis in axes {
 
-		// TackKit.H |-- padding --* viewA
+			func check(_ tack: TackKit.Chain, _ visualFormat: String) {
+				assertEqualConstraints(
+					tack.axis(axis.1),
+					NSLayoutConstraint.constraints(
+						withVisualFormat: "\(axis.0)\(visualFormat)",
+						options: [], metrics: metrics, views: views
+					)
+				)
+			}
 
-		assertEqualConstraints(
-			withTack(TackKit.H |-- padding --* viewA),
-			withFormat("H:|-(padding)-[viewA]")
-		)
-		assertEqualConstraints(
-			withTack(TackKit.H |-- .eq(padding, 700) --* viewA),
-			withFormat("H:|-(padding@700)-[viewA]")
-		)
-		assertEqualConstraints(
-			withTack(TackKit.H |-- .ge(padding, 700) --* viewA),
-			withFormat("H:|-(>=padding@700)-[viewA]")
-		)
+			// |- padding - viewA
+			check(
+				(|-padding-viewA),
+				"|-(padding)-[viewA]"
+			)
+			check(
+				(|-(.eq(padding, .defaultHigh - 1))-viewA),
+				"|-(padding@749)-[viewA]"
+			)
+			check(
+				(|-.ge(padding, .defaultHigh - 1)-viewA),
+				"|-(>=padding@749)-[viewA]"
+			)
 
-		// TackKit.H viewA *-- padding *-- viewB
+			// viewA - padding - viewB
+			check(
+				(viewA-padding-viewB),
+				"[viewA]-(padding)-[viewB]"
+			)
+			check(
+				(viewA-(.eq(padding))-viewB),
+				"[viewA]-(padding)-[viewB]"
+			)
+			check(
+				(viewA-(.ge(padding, .defaultHigh - 1))-viewB),
+				"[viewA]-(>=padding@749)-[viewB]"
+			)
 
-		assertEqualConstraints(
-			withTack(TackKit.H & viewA *-- .eq(padding, 1000) --* viewB),
-			withFormat("H:[viewA]-(padding)-[viewB]")
-		)
-		assertEqualConstraints(
-			withTack(TackKit.H & viewA *-- .ge(padding, 700) --* viewB),
-			withFormat("H:[viewA]-(>=padding@700)-[viewB]")
-		)
+			// viewA - padding -|
+			check(
+				(viewA-(.eq(padding))-|),
+				"[viewA]-(padding)-|"
+			)
 
-		// TackKit.H viewA *-- padding --|
-
-
-		// A chain.
-		assertEqualConstraints(
-			withTack(TackKit.H |-- .ge(padding, 700) --* viewA *-- .eq(padding, 1000) --* viewB ),
-			withFormat("H:|-(>=padding@700)-[viewA]-(padding)-[viewB]")
-		)
+			// A chain.
+			check(
+				(|-(.ge(padding, .defaultHigh - 1))-viewA-(.eq(padding))-viewB-(padding)-|),
+				"|-(>=padding@749)-[viewA]-(padding)-[viewB]-(padding)-|"
+			)
+		}
 	}
 }
