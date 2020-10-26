@@ -81,7 +81,7 @@ class TackKitTestCase: XCTestCase {
 		self.measure {
 			for _ in 1...iterations {
 				let _ = NSLayoutConstraint.constraints(
-					withVisualFormat: "H:|-(>=padding@749)-[viewA]-(padding)-[viewB]",
+					withVisualFormat: "H:|-(>=padding)-[viewA]-(padding)-[viewB]",
 					options: [], metrics: metrics, views: views
 				)
 			}
@@ -91,7 +91,7 @@ class TackKitTestCase: XCTestCase {
 	@objc func testTackKitPerformance() {
 		self.measure {
 			for _ in 1...iterations {
-				let _ = TackKit.H(|-(.ge(padding, .defaultHigh - 1))-viewA-(.eq(padding, .required))-viewB)
+				let _ = Tack.H(|-(>=padding)-viewA-padding-viewB)
 			}
 		}
 	}
@@ -99,17 +99,21 @@ class TackKitTestCase: XCTestCase {
 	// Not really a test, just to check if different combinations compile.
 	func testBuilding() {
 
-		print(TackKit.H(|-.eq(padding)-viewA))
-		print(TackKit.H(|-(padding)-viewA))
-		print(TackKit.H(|-padding-viewA))
+		print(Tack.H(|-.eq(padding)-viewA))
+		print(Tack.H(|-(==padding)-viewA))
+		print(Tack.H(|-(padding)-viewA))
+		print(Tack.H(|-padding-viewA))
 
-		print((viewA-(.eq(padding))-viewB))
-		print((viewA-(padding)-viewB))
-		print((viewA-padding-viewB))
+		print(Tack.H(|-.ge(padding)-viewA))
+		print(Tack.H(|-(>=padding)-viewA))
 
-		print((viewB-(.eq(padding))-|))
-		print((viewB-(padding)-|))
-		print((viewB-padding-|))
+		print(Tack.H(viewA-(.eq(padding))-viewB))
+		print(Tack.H(viewA-(padding)-viewB))
+		print(Tack.H(viewA-padding-viewB))
+
+		print(Tack.H(viewB-(.eq(padding))-|))
+		print(Tack.H(viewB-(padding)-|))
+		print(Tack.H(viewB-padding-|))
 	}
 
 	func testBasics() {
@@ -119,7 +123,7 @@ class TackKitTestCase: XCTestCase {
 		]
 		for axis in axes {
 
-			func check(_ tack: TackKit.Chain, _ visualFormat: String) {
+			func check(_ tack: Tack.Chain, _ visualFormat: String) {
 				assertEqualConstraints(
 					tack.axis(axis.1),
 					NSLayoutConstraint.constraints(
@@ -139,7 +143,15 @@ class TackKitTestCase: XCTestCase {
 				"|-(padding@749)-[viewA]"
 			)
 			check(
+				(|-(padding^749)-viewA),
+				"|-(padding@749)-[viewA]"
+			)
+			check(
 				(|-.ge(padding, .defaultHigh - 1)-viewA),
+				"|-(>=padding@749)-[viewA]"
+			)
+			check(
+				(|-(>=padding^749)-viewA),
 				"|-(>=padding@749)-[viewA]"
 			)
 
@@ -153,7 +165,7 @@ class TackKitTestCase: XCTestCase {
 				"[viewA]-(padding)-[viewB]"
 			)
 			check(
-				(viewA-(.ge(padding, .defaultHigh - 1))-viewB),
+				(viewA-(.ge(padding, 749))-viewB),
 				"[viewA]-(>=padding@749)-[viewB]"
 			)
 
@@ -165,8 +177,8 @@ class TackKitTestCase: XCTestCase {
 
 			// A chain.
 			check(
-				(|-(.ge(padding, .defaultHigh - 1))-viewA-(.eq(padding))-viewB-(padding)-|),
-				"|-(>=padding@749)-[viewA]-(padding)-[viewB]-(padding)-|"
+				(|-(.ge2(padding, 749))-viewA-(>=padding)-viewB-(padding^249)-|),
+				"|-(>=padding,padding@749)-[viewA]-(>=padding)-[viewB]-(padding@249)-|"
 			)
 		}
 	}
