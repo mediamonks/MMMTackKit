@@ -10,10 +10,16 @@
 // TODO: not sure we are really interested in these.
 
 prefix operator >=
+prefix operator >==
 prefix operator ==
 
 public prefix func >= (padding: CGFloat) -> Tack.Padding {
 	return .ge(padding)
+}
+
+/// This is for what we call a "double-pin" pattern, `-(>=padding,==padding@priority)-`.
+public prefix func >== (padding: CGFloat) -> Tack.Padding {
+	return .ge2(padding, .defaultLow - 1)
 }
 
 public prefix func == (padding: CGFloat) -> Tack.Padding {
@@ -118,6 +124,32 @@ public func - (chain: Tack.Chain, rhs: Tack.PaddingSuperview) -> Tack.Chain {
 }
 
 public enum Tack {
+
+	public static func activate(H chain: Chain) {
+		NSLayoutConstraint.activate(chain.axis(.horizontal))
+	}
+
+	public static func activate(V chain: Chain) {
+		NSLayoutConstraint.activate(chain.axis(.vertical))
+	}
+
+	public static func activate(_ constraints: [NSLayoutConstraint]) {
+		NSLayoutConstraint.activate(constraints)
+	}
+
+	public static func activate(_ chain: OrientedChain) {
+		switch chain {
+		case let .H(chain):
+			NSLayoutConstraint.activate(Tack.H(chain))
+		case let .V(chain):
+			NSLayoutConstraint.activate(Tack.V(chain))
+		}
+	}
+
+	public enum OrientedChain {
+		case H(Chain)
+		case V(Chain)
+	}
 
 	public static func H(_ chain: Chain) -> [NSLayoutConstraint] {
 		return chain.axis(.horizontal)
@@ -227,6 +259,7 @@ public enum Tack {
 
 		public func axis(_ axis: NSLayoutConstraint.Axis) -> [NSLayoutConstraint] {
 			return pairs.flatMap { pair in
+				// TODO: inline padding.resolved() here
 				return pair.padding.resolved().map { padding in
 					let lhs = pair.lhs.resolved(axis: axis)
 					let rhs = pair.rhs.resolved(axis: axis)

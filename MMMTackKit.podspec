@@ -6,7 +6,7 @@
 Pod::Spec.new do |s|
 
 	s.name = "MMMTackKit"
-	s.version = "0.1.2"
+	s.version = "0.1.3"
 	s.summary = "Type-safe replacement for Auto Layout Visual Formatting Language"
 	s.description =  s.summary
 	s.homepage = "https://github.com/mediamonks/#{s.name}"
