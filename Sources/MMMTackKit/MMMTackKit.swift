@@ -3,11 +3,9 @@
 // Copyright (C) 2015-2020 MediaMonks. All rights reserved.
 //
 
-// TODO: 1) alignment flags
-// TODO: 2) equal height/width
+// TODO: syntax for equal height/width?
 
 // To allow using `>=padding` instead of `.ge(padding)` (and same for `==padding` for symmetry).
-// TODO: not sure we are really interested in these.
 
 prefix operator >=
 prefix operator >==
@@ -17,7 +15,8 @@ public prefix func >= (padding: CGFloat) -> Tack.Padding {
 	return .ge(padding)
 }
 
-/// This is for what we call a "double-pin" pattern, `-(>=padding,==padding@priority)-`.
+/// A "double pin". Specifying `.ge2(priority)` or `>==padding^priority`
+/// is the same as the use of `">=padding,==padding@priority"` in VFL.
 public prefix func >== (padding: CGFloat) -> Tack.Padding {
 	return .ge2(padding, .defaultLow - 1)
 }
@@ -29,10 +28,12 @@ public prefix func == (padding: CGFloat) -> Tack.Padding {
 // For something close to `padding@249` (cannot use @ as operator).
 // TODO: not sure we are really interested in this.
 
+/// Analogue of `@` in VFL, i.e. using `padding^249` is the same as using `"padding@249"` in VFL.
 public func ^(padding: CGFloat, priority: CGFloat) -> Tack.Padding {
 	return ._equal(padding, UILayoutPriority(Float(priority)))
 }
 
+/// Analogue of `@` in VFL, i.e. using `padding^249` is the same as using `"padding@249"` in VFL.
 public func ^(padding: Tack.Padding, priority: CGFloat) -> Tack.Padding {
 	switch padding {
 	case let ._equal(padding, _):
@@ -61,40 +62,52 @@ public prefix func |- (padding: Tack.Padding) -> Tack.SuperviewPadding {
 
 public func - (lhs: Tack.SuperviewPadding, view: UIView) -> Tack.Chain {
 	return .init(
-		pairs: [.init(lhs: .leading(view.superview!), padding: lhs.padding, rhs: .leading(view))],
-		trailing: .trailing(view)
+		pairs: [.init(
+			lhs: .init(.leading, .superview, view),
+			padding: lhs.padding,
+			rhs: .init(.leading, .this, view)
+		)],
+		last: .init(.trailing, .this, view)
 	)
 }
 
 // [viewA]-(padding)-[viewB]
 
-public func - (lhs: UIView, rhs: Tack.Padding) -> Tack.ViewPadding {
-	return .init(view: lhs, padding: rhs)
+public func - (view: UIView, rhs: Tack.Padding) -> Tack.ViewPadding {
+	return .init(view: view, padding: rhs)
 }
 
-public func - (lhs: UIView, rhs: CGFloat) -> Tack.ViewPadding {
-	return .init(view: lhs, padding: ._equal(rhs, .required))
+public func - (view: UIView, rhs: CGFloat) -> Tack.ViewPadding {
+	return .init(view: view, padding: ._equal(rhs, .required))
 }
 
-public func - (lhs: Tack.ViewPadding, rhs: UIView) -> Tack.Chain {
+public func - (lhs: Tack.ViewPadding, view: UIView) -> Tack.Chain {
 	return .init(
-		pairs: [.init(lhs: .trailing(lhs.view), padding: lhs.padding, rhs: .leading(rhs))],
-		trailing: .trailing(rhs)
+		pairs: [.init(
+			lhs: .init(.trailing, .this, lhs.view),
+			padding: lhs.padding,
+			rhs: .init(.leading, .this, view)
+		)],
+		last: .init(.trailing, .this, view)
 	)
 }
 
-public func - (lhs: Tack.Chain, rhs: Tack.Padding) -> Tack.ChainPadding {
-	return .init(chain: lhs, padding: rhs)
+public func - (chain: Tack.Chain, padding: Tack.Padding) -> Tack.ChainPadding {
+	return .init(chain: chain, padding: padding)
 }
 
-public func - (lhs: Tack.Chain, rhs: CGFloat) -> Tack.ChainPadding {
-	return .init(chain: lhs, padding: ._equal(rhs, .required))
+public func - (chain: Tack.Chain, rhs: CGFloat) -> Tack.ChainPadding {
+	return .init(chain: chain, padding: ._equal(rhs, .required))
 }
 
-public func - (lhs: Tack.ChainPadding, rhs: UIView) -> Tack.Chain {
+public func - (lhs: Tack.ChainPadding, view: UIView) -> Tack.Chain {
 	return .init(
-		pairs: lhs.chain.pairs + [.init(lhs: lhs.chain.trailing, padding: lhs.padding, rhs: .leading(rhs))],
-		trailing: .trailing(rhs)
+		pairs: lhs.chain.pairs + [.init(
+			lhs: lhs.chain.last,
+			padding: lhs.padding,
+			rhs: .init(.leading, .this, view)
+		)],
+		last: .init(.trailing, .this, view)
 	)
 }
 
@@ -108,17 +121,21 @@ public postfix func -| (padding: CGFloat) -> Tack.PaddingSuperview {
 	return .init(padding: .eq(padding))
 }
 
-public func - (lhs: UIView, rhs: Tack.PaddingSuperview) -> Tack.Chain {
+public func - (view: UIView, rhs: Tack.PaddingSuperview) -> Tack.Chain {
 	return .init(
-		pairs: [.init(lhs: .trailing(lhs), padding: rhs.padding, rhs: .trailing(lhs.superview!))],
-		trailing: .trailing(lhs.superview!)
+		pairs: [.init(lhs: .init(.trailing, .this, view), padding: rhs.padding, rhs: .init(.trailing, .superview, view))],
+		last: .init(.trailing, .superview, view)
 	)
 }
 
 public func - (chain: Tack.Chain, rhs: Tack.PaddingSuperview) -> Tack.Chain {
 	return .init(
-		pairs: chain.pairs + [.init(lhs: chain.trailing, padding: rhs.padding, rhs: .trailing(chain.trailing.view.superview!))],
-		trailing: .trailing(chain.trailing.view.superview!)
+		pairs: chain.pairs + [.init(
+			lhs: chain.last,
+			padding: rhs.padding,
+			rhs: .init(.trailing, .superview, chain.last.view)
+		)],
+		last: .init(.trailing, .superview, chain.last.view)
 	)
 }
 
@@ -137,19 +154,19 @@ public postfix func -<| (padding: Tack.Padding) -> Tack.PaddingSuperviewSafeArea
 
 public func - (view: UIView, rhs: Tack.PaddingSuperviewSafeArea) -> Tack.Chain {
 	return .init(
-		pairs: [.init(lhs: .trailing(view), padding: rhs.padding, rhs: .trailingSafeArea(view.superview!))],
-		trailing: .trailingSafeArea(view.superview!)
+		pairs: [.init(lhs: .init(.trailing, .this, view), padding: rhs.padding, rhs: .init(.trailing, .safeAreaOfSuperview,view))],
+		last: .init(.trailing, .safeAreaOfSuperview, view)
 	)
 }
 
 public func - (chain: Tack.Chain, rhs: Tack.PaddingSuperviewSafeArea) -> Tack.Chain {
 	return .init(
 		// TODO: make this nicer
-		pairs: chain.pairs + [ .init(lhs: chain.trailing,
+		pairs: chain.pairs + [ .init(lhs: chain.last,
 			padding: rhs.padding,
-			rhs: .trailingSafeArea(chain.trailing.view.superview!))
-		],
-		trailing: .trailingSafeArea(chain.trailing.view.superview!)
+			rhs: .init(.trailing, .safeAreaOfSuperview, chain.last.view)
+		)],
+		last: .init(.trailing, .safeAreaOfSuperview, chain.last.view)
 	)
 }
 
@@ -166,25 +183,61 @@ public enum Tack {
 	}
 
 	public static func activate(_ chain: OrientedChain) {
-		switch chain {
-		case let .H(chain):
-			NSLayoutConstraint.activate(chain.axis(.horizontal))
-		case let .V(chain):
-			NSLayoutConstraint.activate(chain.axis(.vertical))
+		NSLayoutConstraint.activate(chain.constraints)
+	}
+
+	public struct OrientedChain {
+
+		internal let constraints: [NSLayoutConstraint]
+
+		public static func H(_ chain: Chain, alignAll alignment: VerticalAlignment = .none) -> Self {
+			.init(constraints: chain.resolved(.horizontal, alignment: alignment.attribute()))
+		}
+
+		public static func V(_ chain: Chain, alignAll alignment: HorizontalAlignment = .none) -> Self {
+			.init(constraints: chain.resolved(.vertical, alignment: alignment.attribute()))
 		}
 	}
 
-	public enum OrientedChain {
-		case H(Chain)
-		case V(Chain)
+	public enum VerticalAlignment: Int {
+
+		case none, top, firstBaseline, centerY, lastBaseline, bottom
+
+		// TODO: use raw value from Attribute
+		internal func attribute() -> NSLayoutConstraint.Attribute {
+			switch self {
+			case .none: return .notAnAttribute
+			case .top: return .top
+			case .firstBaseline: return .firstBaseline
+			case .centerY: return .centerY
+			case .lastBaseline: return .lastBaseline
+			case .bottom: return .bottom
+			}
+		}
 	}
 
-	public static func H(_ chain: Chain) -> [NSLayoutConstraint] {
-		return chain.axis(.horizontal)
+	public enum HorizontalAlignment {
+	
+		case none, leading, left, center, trailing, right
+
+		internal func attribute() -> NSLayoutConstraint.Attribute {
+			switch self {
+			case .none: return .notAnAttribute
+			case .leading: return .leading
+			case .left: return .left
+			case .center: return .centerX
+			case .trailing: return .trailing
+			case .right: return .right
+			}
+		}
+	}
+
+	public static func H(_ chain: Chain, alignAll alignment: VerticalAlignment = .none) -> [NSLayoutConstraint] {
+		return chain.resolved(.horizontal, alignment: alignment.attribute())
 	}
 	
-	public static func V(_ chain: Chain) -> [NSLayoutConstraint] {
-		return chain.axis(.vertical)
+	public static func V(_ chain: Chain, alignAll alignment: HorizontalAlignment = .none) -> [NSLayoutConstraint] {
+		return chain.resolved(.vertical, alignment: alignment.attribute())
 	}
 
 	internal typealias ResolvedPadding = (NSLayoutConstraint.Relation, CGFloat, UILayoutPriority)
@@ -208,10 +261,13 @@ public enum Tack {
 			return ._greaterThanOrEqual(value, UILayoutPriority(priority))
 		}
 
-		/// This is for what we call a "double-pin" pattern, `-(>=padding,==padding@priority)-`.
+		/// A "double pin". Specifying `.ge2(priority)` or `>==padding^priority`
+		/// is the same as the use of `">=padding,==padding@priority"` in VFL.
 		public static func ge2(_ value: CGFloat, _ priority: UILayoutPriority) -> Padding {
 			return ._doublePin(value, priority)
 		}
+		/// A "double pin". Specifying `.ge2(priority)` or `>==padding^priority`
+		/// is the same as the use of `">=padding,==padding@priority"` in VFL.
 		public static func ge2(_ value: CGFloat, _ priority: Float) -> Padding {
 			return ._doublePin(value, UILayoutPriority(priority))
 		}
@@ -240,56 +296,80 @@ public enum Tack {
 
 	internal typealias ResolvedSide = (AnyObject, NSLayoutConstraint.Attribute)
 
-	// TODO: separate the view and the side
 	public enum Side {
+		case leading, trailing
+	}
 
-		case leading(UIView)
-		case trailing(UIView)
-		case trailingSafeArea(UIView)
+	public enum ViewRef {
+		case this, superview, safeAreaOfSuperview
+	}
 
-		var view: UIView {
-			switch self {
-			case let .leading(view), let .trailing(view), let .trailingSafeArea(view):
-				return view
-			}
+	public struct Anchor {
+
+		let side: Side
+		let ref: ViewRef
+		let view: UIView
+
+		init(_ side: Side, _ ref: ViewRef, _ view: UIView) {
+			self.side = side
+			self.ref = ref
+			self.view = view
 		}
 
 		internal func resolved(axis: NSLayoutConstraint.Axis) -> ResolvedSide {
-			switch axis {
-			case .horizontal:
-				switch self {
-				case let .leading(v):
-					return (v, .leading)
-				case let .trailing(v):
-					return (v, .trailing)
-				case let .trailingSafeArea(v):
-					return (v.safeAreaLayoutGuide, .trailing)
+
+			let r: AnyObject = {
+				switch ref {
+				case .this:
+					return view
+				case .superview:
+					guard let superview = view.superview else {
+						preconditionFailure("Trying to constrain against a superview of a view that does not have one: \(view)")
+					}
+					return superview
+				case .safeAreaOfSuperview:
+					guard let superview = view.superview else {
+						preconditionFailure("Trying to constrain against safe area of a superview of a view that does not have one: \(view)")
+					}
+					return superview.safeAreaLayoutGuide
 				}
-			case .vertical:
-				switch self {
-				case let .leading(v):
-					return (v, .top)
-				case let .trailing(v):
-					return (v, .bottom)
-				case let .trailingSafeArea(v):
-					return (v.safeAreaLayoutGuide, .bottom)
+			}()
+
+			let attribute: NSLayoutConstraint.Attribute = {
+				switch axis {
+				case .horizontal:
+					switch side {
+					case .leading:
+						return .leading
+					case .trailing:
+						return .trailing
+					}
+				case .vertical:
+					switch side {
+					case .leading:
+						return .top
+					case .trailing:
+						return .bottom
+					}
 				}
-			}
+			}()
+
+			return (r, attribute)
 		}
 	}
 
 	public struct Pair {
-		let lhs: Side
+		let lhs: Anchor
 		let padding: Padding
-		let rhs: Side
+		let rhs: Anchor
 	}
 
 	public struct Chain {
 
 		let pairs: [Pair]
-		let trailing: Side // TODO: use the last view instead
+		let last: Anchor // TODO: use the last view instead
 
-		internal func axis(_ axis: NSLayoutConstraint.Axis) -> [NSLayoutConstraint] {
+		internal func resolved(_ axis: NSLayoutConstraint.Axis, alignment: NSLayoutConstraint.Attribute = .notAnAttribute) -> [NSLayoutConstraint] {
 
 			func constraint(_ lhs: ResolvedSide, _ rhs: ResolvedSide, _ padding: ResolvedPadding) -> NSLayoutConstraint {
 				let c = NSLayoutConstraint(
@@ -301,7 +381,7 @@ public enum Tack {
 				c.priority = padding.2
 				return c
 			}
-		
+
 			var result: [NSLayoutConstraint] = []
 			for pair in pairs {
 
@@ -318,6 +398,30 @@ public enum Tack {
 					result.append(constraint(lhs, rhs, (.equal, value, prio)))
 				}
 			}
+
+			if alignment != .notAnAttribute {
+				var views: [UIView] = []
+				for pair in pairs {
+					let last = views.last
+					if pair.lhs.ref == .this && pair.lhs.view != last {
+						views.append(pair.lhs.view)
+					}
+					if pair.rhs.ref == .this && pair.lhs.view != last {
+						views.append(pair.rhs.view)
+					}
+				}
+				var i: Int = 0
+				while i < views.count - 1 {
+					result.append(.init(
+						item: views[i], attribute: alignment,
+						relatedBy: .equal,
+						toItem: views[i + 1], attribute: alignment,
+						multiplier: 1, constant: 0
+					))
+					i += 1
+				}
+			}
+
 			return result
 		}
 	}

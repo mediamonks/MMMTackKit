@@ -12,6 +12,7 @@ class TackKitTestCase: XCTestCase {
 	private var container: UIView!
 	private var viewA: UIView!
 	private var viewB: UIView!
+	private var viewC: UIView!
 
 	private var views: [String: UIView]!
 	private var metrics: [String: CGFloat]!
@@ -29,7 +30,10 @@ class TackKitTestCase: XCTestCase {
 		viewB = UIView()
 		container.addSubview(viewB)
 
-		views = [ "viewA": viewA, "viewB": viewB ]
+		viewC = UIView()
+		container.addSubview(viewC)
+
+		views = [ "viewA": viewA, "viewB": viewB, "viewC": viewC ]
 		metrics = [ "padding": padding ]
 	}
 
@@ -72,7 +76,10 @@ class TackKitTestCase: XCTestCase {
 	}
 
 	func assertEqualConstraints(_ a: [NSLayoutConstraint], _ b: [NSLayoutConstraint]) {
-		XCTAssertEqual(a.count, b.count, "Expected the same number of constraints")
+		guard a.count == b.count else {
+			XCTFail("Expected equal number of constraints")
+			return
+		}
 		for i in a.indices {
 			assertEqual(a[i], b[i])
 		}
@@ -159,9 +166,9 @@ class TackKitTestCase: XCTestCase {
 			Tack.V(viewA-(padding)-viewB-(padding)-<|),
 			[
 				.init(
-					item: viewA, attribute: .trailing,
+					item: viewA, attribute: .bottom,
 					relatedBy: .equal,
-					toItem: viewB, attribute: .leading,
+					toItem: viewB, attribute: .top,
 					multiplier: 1, constant: -padding
 				),
 				.init(
@@ -174,6 +181,17 @@ class TackKitTestCase: XCTestCase {
 		)
 	}
 
+	func testAlignment() {
+		assertEqualConstraints(
+			Tack.H(|-(padding)-viewA-(padding)-viewB-(padding)-viewC-(padding)-|, alignAll: .centerY),
+			NSLayoutConstraint.constraints(
+				withVisualFormat: "H:|-(padding)-[viewA]-(padding)-[viewB]-(padding)-[viewC]-(padding)-|",
+				options: [.alignAllCenterY],
+				metrics: metrics, views: views
+			)
+		)
+	}
+
 	func testBasics() {
 		let axes: [(String, NSLayoutConstraint.Axis)] = [
 			("H:", .horizontal),
@@ -183,7 +201,7 @@ class TackKitTestCase: XCTestCase {
 
 			func check(_ tack: Tack.Chain, _ visualFormat: String) {
 				assertEqualConstraints(
-					tack.axis(axis.1),
+					tack.resolved(axis.1),
 					NSLayoutConstraint.constraints(
 						withVisualFormat: "\(axis.0)\(visualFormat)",
 						options: [], metrics: metrics, views: views
