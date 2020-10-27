@@ -3,7 +3,7 @@
 // Copyright (C) 2015-2020 MediaMonks. All rights reserved.
 //
 
-import MMMTackKit
+@testable import MMMTackKit
 import UIKit
 import XCTest
 
@@ -43,6 +43,7 @@ class TackKitTestCase: XCTestCase {
 
 			XCTAssertEqual(a.constant, b.constant)
 			XCTAssertEqual(a.relation, b.relation)
+			XCTAssertEqual(a.priority, b.priority)
 
 		} else if (a.firstItem === b.secondItem && a.secondItem === b.firstItem) {
 
@@ -62,6 +63,8 @@ class TackKitTestCase: XCTestCase {
 				}
 			}
 			XCTAssertEqual(a.relation, opposite(b.relation))
+
+			XCTAssertEqual(a.priority, b.priority)
 
 		} else {
 			XCTFail("Constraints differ in their items")
@@ -177,8 +180,18 @@ class TackKitTestCase: XCTestCase {
 
 			// A chain.
 			check(
-				(|-(.ge2(padding, 749))-viewA-(>=padding)-viewB-(padding^249)-|),
+				|-(.ge2(padding, 749))-viewA-(>=padding)-viewB-(padding^249)-|,
 				"|-(>=padding,padding@749)-[viewA]-(>=padding)-[viewB]-(padding@249)-|"
+			)
+
+			// Double pins.
+			check(
+				(|-(>==padding^749)-viewA),
+				"|-(>=padding,padding@749)-[viewA]"
+			)
+			check(
+				viewA-(>==padding^749)-|,
+				"[viewA]-(>=padding,padding@749)-|"
 			)
 		}
 	}

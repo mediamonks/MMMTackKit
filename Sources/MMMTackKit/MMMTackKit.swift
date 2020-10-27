@@ -125,10 +125,12 @@ public func - (chain: Tack.Chain, rhs: Tack.PaddingSuperview) -> Tack.Chain {
 
 public enum Tack {
 
+	@available(*, deprecated)
 	public static func activate(H chain: Chain) {
 		NSLayoutConstraint.activate(chain.axis(.horizontal))
 	}
 
+	@available(*, deprecated)
 	public static func activate(V chain: Chain) {
 		NSLayoutConstraint.activate(chain.axis(.vertical))
 	}
@@ -137,12 +139,16 @@ public enum Tack {
 		NSLayoutConstraint.activate(constraints)
 	}
 
+	public static func activate(_ constraint: NSLayoutConstraint) {
+		constraint.isActive = true
+	}
+
 	public static func activate(_ chain: OrientedChain) {
 		switch chain {
 		case let .H(chain):
-			NSLayoutConstraint.activate(Tack.H(chain))
+			NSLayoutConstraint.activate(chain.axis(.horizontal))
 		case let .V(chain):
-			NSLayoutConstraint.activate(Tack.V(chain))
+			NSLayoutConstraint.activate(chain.axis(.vertical))
 		}
 	}
 
@@ -159,12 +165,15 @@ public enum Tack {
 		return chain.axis(.vertical)
 	}
 
+	internal typealias ResolvedPadding = (NSLayoutConstraint.Relation, CGFloat, UILayoutPriority)
+
+	// TODO: can be a struct eventually, storing already "resolved" array
 	public enum Padding {
 
 		public static func eq(_ value: CGFloat, _ priority: UILayoutPriority = .required) -> Padding {
 			return ._equal(value, priority)
 		}
-		/// (To allow using regular floats without casing to UILayoutPriority.)
+		/// (To allow using regular floats without casting to UILayoutPriority.)
 		public static func eq(_ value: CGFloat, _ priority: Float) -> Padding {
 			return ._equal(value, UILayoutPriority(priority))
 		}
@@ -172,7 +181,7 @@ public enum Tack {
 		public static func ge(_ value: CGFloat, _ priority: UILayoutPriority = .required) -> Padding {
 			return ._greaterThanOrEqual(value, priority)
 		}
-		/// (To allow using regular floats without casing to UILayoutPriority.)
+		/// (To allow using regular floats without casting to UILayoutPriority.)
 		public static func ge(_ value: CGFloat, _ priority: Float) -> Padding {
 			return ._greaterThanOrEqual(value, UILayoutPriority(priority))
 		}
@@ -188,17 +197,6 @@ public enum Tack {
 		case _equal(CGFloat, UILayoutPriority)
 		case _greaterThanOrEqual(CGFloat, UILayoutPriority)
 		case _doublePin(CGFloat, UILayoutPriority)
-
-		internal func resolved() -> [(NSLayoutConstraint.Relation, CGFloat, UILayoutPriority)] {
-			switch self {
-			case let ._equal(value, prio):
-				return [(.equal, value, prio)]
-			case let ._greaterThanOrEqual(value, prio):
-				return [(.greaterThanOrEqual, value, prio)]
-			case let ._doublePin(value, prio):
-				return [(.greaterThanOrEqual, value, .required), (.equal, value, prio)]
-			}
-		}
 	}
 
 	public struct SuperviewPadding {
@@ -214,6 +212,8 @@ public enum Tack {
 		let padding: Padding
 	}
 
+	internal typealias ResolvedSide = (UIView, NSLayoutConstraint.Attribute)
+
 	public enum Side {
 
 		case leading(UIView)
@@ -226,7 +226,7 @@ public enum Tack {
 			}
 		}
 
-		internal func resolved(axis: NSLayoutConstraint.Axis) -> (UIView, NSLayoutConstraint.Attribute) {
+		internal func resolved(axis: NSLayoutConstraint.Axis) -> ResolvedSide {
 			switch axis {
 			case .horizontal:
 				switch self {
@@ -257,20 +257,36 @@ public enum Tack {
 		let pairs: [Pair]
 		let trailing: Side // TODO: use the last view instead
 
-		public func axis(_ axis: NSLayoutConstraint.Axis) -> [NSLayoutConstraint] {
-			return pairs.flatMap { pair in
-				// TODO: inline padding.resolved() here
-				return pair.padding.resolved().map { padding in
-					let lhs = pair.lhs.resolved(axis: axis)
-					let rhs = pair.rhs.resolved(axis: axis)
-					return NSLayoutConstraint(
-						item: rhs.0, attribute: rhs.1,
-						relatedBy: padding.0,
-						toItem: lhs.0, attribute: lhs.1,
-						multiplier: 1, constant: padding.1
-					)
+		internal func axis(_ axis: NSLayoutConstraint.Axis) -> [NSLayoutConstraint] {
+
+			func constraint(_ lhs: ResolvedSide, _ rhs: ResolvedSide, _ padding: ResolvedPadding) -> NSLayoutConstraint {
+				let c = NSLayoutConstraint(
+					item: rhs.0, attribute: rhs.1,
+					relatedBy: padding.0,
+					toItem: lhs.0, attribute: lhs.1,
+					multiplier: 1, constant: padding.1
+				)
+				c.priority = padding.2
+				return c
+			}
+		
+			var result: [NSLayoutConstraint] = []
+			for pair in pairs {
+
+				let lhs = pair.lhs.resolved(axis: axis)
+				let rhs = pair.rhs.resolved(axis: axis)
+
+				switch pair.padding {
+				case let ._equal(value, prio):
+					result.append(constraint(lhs, rhs, (.equal, value, prio)))
+				case let ._greaterThanOrEqual(value, prio):
+					result.append(constraint(lhs, rhs, (.greaterThanOrEqual, value, prio)))
+				case let ._doublePin(value, prio):
+					result.append(constraint(lhs, rhs, (.greaterThanOrEqual, value, .required)))
+					result.append(constraint(lhs, rhs, (.equal, value, prio)))
 				}
 			}
+			return result
 		}
 	}
 
