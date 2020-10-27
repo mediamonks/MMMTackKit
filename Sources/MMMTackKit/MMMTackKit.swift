@@ -40,7 +40,6 @@ public func ^(padding: Tack.Padding, priority: CGFloat) -> Tack.Padding {
 	case let ._greaterThanOrEqual(padding, _):
 		return ._greaterThanOrEqual(padding, UILayoutPriority(Float(priority)))
 	case let ._doublePin(padding, _):
-		// TODO: allowing this is a bit weird.
 		return ._doublePin(padding, UILayoutPriority(Float(priority)))
 	}
 }
@@ -123,17 +122,40 @@ public func - (chain: Tack.Chain, rhs: Tack.PaddingSuperview) -> Tack.Chain {
 	)
 }
 
+// Safe area, like in mmm_constraintsWithVisualFormat.
+
+postfix operator -<|
+prefix operator |>-
+
+public postfix func -<| (padding: CGFloat) -> Tack.PaddingSuperviewSafeArea {
+	return .init(padding: .eq(padding))
+}
+
+public postfix func -<| (padding: Tack.Padding) -> Tack.PaddingSuperviewSafeArea {
+	return .init(padding: padding)
+}
+
+public func - (view: UIView, rhs: Tack.PaddingSuperviewSafeArea) -> Tack.Chain {
+	return .init(
+		pairs: [.init(lhs: .trailing(view), padding: rhs.padding, rhs: .trailingSafeArea(view.superview!))],
+		trailing: .trailingSafeArea(view.superview!)
+	)
+}
+
+public func - (chain: Tack.Chain, rhs: Tack.PaddingSuperviewSafeArea) -> Tack.Chain {
+	return .init(
+		// TODO: make this nicer
+		pairs: chain.pairs + [ .init(lhs: chain.trailing,
+			padding: rhs.padding,
+			rhs: .trailingSafeArea(chain.trailing.view.superview!))
+		],
+		trailing: .trailingSafeArea(chain.trailing.view.superview!)
+	)
+}
+
+// MARK: -
+
 public enum Tack {
-
-	@available(*, deprecated)
-	public static func activate(H chain: Chain) {
-		NSLayoutConstraint.activate(chain.axis(.horizontal))
-	}
-
-	@available(*, deprecated)
-	public static func activate(V chain: Chain) {
-		NSLayoutConstraint.activate(chain.axis(.vertical))
-	}
 
 	public static func activate(_ constraints: [NSLayoutConstraint]) {
 		NSLayoutConstraint.activate(constraints)
@@ -212,16 +234,22 @@ public enum Tack {
 		let padding: Padding
 	}
 
-	internal typealias ResolvedSide = (UIView, NSLayoutConstraint.Attribute)
+	public struct PaddingSuperviewSafeArea {
+		let padding: Padding
+	}
 
+	internal typealias ResolvedSide = (AnyObject, NSLayoutConstraint.Attribute)
+
+	// TODO: separate the view and the side
 	public enum Side {
 
 		case leading(UIView)
 		case trailing(UIView)
+		case trailingSafeArea(UIView)
 
 		var view: UIView {
 			switch self {
-			case let .leading(view), let .trailing(view):
+			case let .leading(view), let .trailing(view), let .trailingSafeArea(view):
 				return view
 			}
 		}
@@ -234,6 +262,8 @@ public enum Tack {
 					return (v, .leading)
 				case let .trailing(v):
 					return (v, .trailing)
+				case let .trailingSafeArea(v):
+					return (v.safeAreaLayoutGuide, .trailing)
 				}
 			case .vertical:
 				switch self {
@@ -241,6 +271,8 @@ public enum Tack {
 					return (v, .top)
 				case let .trailing(v):
 					return (v, .bottom)
+				case let .trailingSafeArea(v):
+					return (v.safeAreaLayoutGuide, .bottom)
 				}
 			}
 		}
