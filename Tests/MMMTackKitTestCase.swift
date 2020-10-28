@@ -126,7 +126,7 @@ class TackKitTestCase: XCTestCase {
 		print(Tack.H(viewB-padding-|))
 	}
 
-	func testSafeArea() {
+	func testPostfixSafeArea() {
 		assertEqualConstraints(
 			Tack.H(viewB-(padding)-<|),
 			[.init(
@@ -175,6 +175,61 @@ class TackKitTestCase: XCTestCase {
 					item: viewB, attribute: .bottom,
 					relatedBy: .equal,
 					toItem: container.safeAreaLayoutGuide, attribute: .bottom,
+					multiplier: 1, constant: -padding
+				)
+			]
+		)
+	}
+	
+	func testPrefixSafeArea() {
+		assertEqualConstraints(
+			Tack.H(|>-(padding)-viewB),
+			[.init(
+				item: viewB, attribute: .leading,
+				relatedBy: .equal,
+				toItem: container.safeAreaLayoutGuide, attribute: .leading,
+				multiplier: 1, constant: padding
+			)]
+		)
+		assertEqualConstraints(
+			Tack.V(|>-(padding)-viewB),
+			[.init(
+				item: viewB, attribute: .top,
+				relatedBy: .equal,
+				toItem: container.safeAreaLayoutGuide, attribute: .top,
+				multiplier: 1, constant: padding
+			)]
+		)
+		assertEqualConstraints(
+			Tack.H(|>-(padding)-viewA-(padding)-viewB),
+			[
+				.init(
+					item: viewA, attribute: .leading,
+					relatedBy: .equal,
+					toItem: container.safeAreaLayoutGuide, attribute: .leading,
+					multiplier: 1, constant: padding
+				),
+				.init(
+					item: viewA, attribute: .trailing,
+					relatedBy: .equal,
+					toItem: viewB, attribute: .leading,
+					multiplier: 1, constant: -padding
+				)
+			]
+		)
+		assertEqualConstraints(
+			Tack.V(|>-(padding)-viewA-(padding)-viewB),
+			[
+				.init(
+					item: viewA, attribute: .top,
+					relatedBy: .equal,
+					toItem: container.safeAreaLayoutGuide, attribute: .top,
+					multiplier: 1, constant: padding
+				),
+				.init(
+					item: viewA, attribute: .bottom,
+					relatedBy: .equal,
+					toItem: viewB, attribute: .top,
 					multiplier: 1, constant: -padding
 				)
 			]

@@ -125,7 +125,11 @@ public postfix func -| (padding: CGFloat) -> Tack.PaddingSuperview {
 
 public func - (view: UIView, rhs: Tack.PaddingSuperview) -> Tack.Chain {
 	return .init(
-		pairs: [.init(lhs: .init(.trailing, .this, view), padding: rhs.padding, rhs: .init(.trailing, .superview, view))],
+		pairs: [.init(
+			lhs: .init(.trailing, .this, view),
+			padding: rhs.padding,
+			rhs: .init(.trailing, .superview, view)
+		)],
 		last: .init(.trailing, .superview, view)
 	)
 }
@@ -144,7 +148,6 @@ public func - (chain: Tack.Chain, rhs: Tack.PaddingSuperview) -> Tack.Chain {
 // Safe area, like in mmm_constraintsWithVisualFormat.
 
 postfix operator -<|
-prefix operator |>-
 
 public postfix func -<| (padding: CGFloat) -> Tack.PaddingSuperviewSafeArea {
 	return .init(padding: .eq(padding))
@@ -156,7 +159,11 @@ public postfix func -<| (padding: Tack.Padding) -> Tack.PaddingSuperviewSafeArea
 
 public func - (view: UIView, rhs: Tack.PaddingSuperviewSafeArea) -> Tack.Chain {
 	return .init(
-		pairs: [.init(lhs: .init(.trailing, .this, view), padding: rhs.padding, rhs: .init(.trailing, .safeAreaOfSuperview,view))],
+		pairs: [.init(
+			lhs: .init(.trailing, .this, view),
+			padding: rhs.padding,
+			rhs: .init(.trailing, .safeAreaOfSuperview,view)
+		)],
 		last: .init(.trailing, .safeAreaOfSuperview, view)
 	)
 }
@@ -169,6 +176,27 @@ public func - (chain: Tack.Chain, rhs: Tack.PaddingSuperviewSafeArea) -> Tack.Ch
 			rhs: .init(.trailing, .safeAreaOfSuperview, chain.last.view)
 		)],
 		last: .init(.trailing, .safeAreaOfSuperview, chain.last.view)
+	)
+}
+
+prefix operator |>-
+
+public prefix func |>- (padding: CGFloat) -> Tack.PaddingSuperviewSafeArea {
+	return .init(padding: .eq(padding))
+}
+
+public prefix func |>- (padding: Tack.Padding) -> Tack.PaddingSuperviewSafeArea {
+	return .init(padding: padding)
+}
+
+public func - (lhs: Tack.PaddingSuperviewSafeArea, view: UIView) -> Tack.Chain {
+	return .init(
+		pairs: [.init(
+			lhs: .init(.leading, .safeAreaOfSuperview, view),
+			padding: lhs.padding,
+			rhs: .init(.leading, .this, view)
+		)],
+		last: .init(.trailing, .this, view)
 	)
 }
 
