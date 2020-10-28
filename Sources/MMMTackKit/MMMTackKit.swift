@@ -3,6 +3,8 @@
 // Copyright (C) 2015-2020 MediaMonks. All rights reserved.
 //
 
+import UIKit
+
 // TODO: syntax for equal height/width?
 
 // To allow using `>=padding` instead of `.ge(padding)` (and same for `==padding` for symmetry).
