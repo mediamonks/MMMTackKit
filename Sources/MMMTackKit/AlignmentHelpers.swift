@@ -6,7 +6,7 @@
 import UIKit
 
 extension Tack {
-	
+
 	/// Align a view to another view / parent (receiver), using a horizontal and vertical alignment policy. The insets will be
 	/// applied accordingly. E.g. horizontal alignment `.fill` with insets `(10, 10, 10, 10)` will keep
 	/// 10pts 'spacing' around the aligned view. When insets are applied to a `center` alignment, we will offset the
@@ -21,12 +21,12 @@ extension Tack {
 	public static func align(
 		view: UIView,
 		to parent: UIView,
-		horizontally: HorizontalAlignmentPolicy = .none,
-		vertically: VerticalAlignmentPolicy = .none,
+		horizontally: _Tack.HorizontalAlignmentPolicy = .none,
+		vertically: _Tack.VerticalAlignmentPolicy = .none,
 		insets: UIEdgeInsets = .zero
 	) {
 		
-		Tack.activate(constraintsAligning(
+		Tack.activate(_Tack.constraintsAligning(
 			view: view,
 			to: parent,
 			horizontally: horizontally,
@@ -34,6 +34,28 @@ extension Tack {
 			insets: insets
 		))
 	}
+	
+	/// Align a view to a layout guide, e.g. `view.safeAreaLayoutGuide`, using a horizontal and vertical alignment
+	/// policy. For more info look at the `align(view: UIView, to: UIView...` documentation.
+	public static func align(
+		view: UIView,
+		to parent: UILayoutGuide,
+		horizontally: _Tack.HorizontalAlignmentPolicy = .none,
+		vertically: _Tack.VerticalAlignmentPolicy = .none,
+		insets: UIEdgeInsets = .zero
+	) {
+		
+		Tack.activate(_Tack.constraintsAligning(
+			view: view,
+			to: parent,
+			horizontally: horizontally,
+			vertically: vertically,
+			insets: insets
+		))
+	}
+}
+
+extension _Tack {
 	
 	/// Return the constraints normally applied by `Tack.align()`. For more info, look at that doc-block.
 	// TODO: - Make public?
@@ -46,25 +68,6 @@ extension Tack {
 	) -> [NSLayoutConstraint] {
 		
 		return _constraintsAligning(view: view, parent: parent, h: horizontally, v: vertically, insets: insets)
-	}
-	
-	/// Align a view to a layout guide, e.g. `view.safeAreaLayoutGuide`, using a horizontal and vertical alignment
-	/// policy. For more info look at the `align(view: UIView, to: UIView...` documentation.
-	public static func align(
-		view: UIView,
-		to parent: UILayoutGuide,
-		horizontally: HorizontalAlignmentPolicy = .none,
-		vertically: VerticalAlignmentPolicy = .none,
-		insets: UIEdgeInsets = .zero
-	) {
-		
-		Tack.activate(constraintsAligning(
-			view: view,
-			to: parent,
-			horizontally: horizontally,
-			vertically: vertically,
-			insets: insets
-		))
 	}
 	
 	/// Return the constraints normally applied by `Tack.align()`. For more info, look at that doc-block.
@@ -301,7 +304,7 @@ internal protocol Tack_AlignmentPolicy {
 	func inverseInset(from insets: UIEdgeInsets) -> CGFloat
 }
 
-extension Tack {
+extension _Tack {
 
 	internal typealias AlignmentPolicy = Tack_AlignmentPolicy
 	
@@ -372,7 +375,7 @@ extension Tack {
 	}
 }
 
-extension Tack {
+extension _Tack {
 
 	// Not using HorizontalAlignment since we want fill/golden.
 	public enum VerticalAlignmentPolicy: AlignmentPolicy {

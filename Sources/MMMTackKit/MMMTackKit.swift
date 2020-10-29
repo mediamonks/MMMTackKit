@@ -13,17 +13,17 @@ prefix operator >=
 prefix operator >==
 prefix operator ==
 
-public prefix func >= (padding: CGFloat) -> Tack.Padding {
+public prefix func >= (padding: CGFloat) -> _Tack.Padding {
 	return .ge(padding)
 }
 
 /// A "double pin". Specifying `.ge2(priority)` or `>==padding^priority`
 /// is the same as the use of `">=padding,==padding@priority"` in VFL.
-public prefix func >== (padding: CGFloat) -> Tack.Padding {
+public prefix func >== (padding: CGFloat) -> _Tack.Padding {
 	return .ge2(padding, .defaultLow - 1)
 }
 
-public prefix func == (padding: CGFloat) -> Tack.Padding {
+public prefix func == (padding: CGFloat) -> _Tack.Padding {
 	return .eq(padding)
 }
 
@@ -31,12 +31,12 @@ public prefix func == (padding: CGFloat) -> Tack.Padding {
 // TODO: not sure we are really interested in this.
 
 /// Analogue of `@` in VFL, i.e. using `padding^249` is the same as using `"padding@249"` in VFL.
-public func ^(padding: CGFloat, priority: CGFloat) -> Tack.Padding {
+public func ^(padding: CGFloat, priority: CGFloat) -> _Tack.Padding {
 	return ._equal(padding, UILayoutPriority(Float(priority)))
 }
 
 /// Analogue of `@` in VFL, i.e. using `padding^249` is the same as using `"padding@249"` in VFL.
-public func ^(padding: Tack.Padding, priority: CGFloat) -> Tack.Padding {
+public func ^(padding: _Tack.Padding, priority: CGFloat) -> _Tack.Padding {
 	switch padding {
 	case let ._equal(padding, _):
 		return ._equal(padding, UILayoutPriority(Float(priority)))
@@ -54,15 +54,15 @@ postfix operator -|
 
 // |-(padding)-[view]
 
-public prefix func |- (padding: CGFloat) -> Tack.SuperviewPadding {
+public prefix func |- (padding: CGFloat) -> _Tack.SuperviewPadding {
 	return .init(padding: ._equal(padding, .required))
 }
 
-public prefix func |- (padding: Tack.Padding) -> Tack.SuperviewPadding {
+public prefix func |- (padding: _Tack.Padding) -> _Tack.SuperviewPadding {
 	return .init(padding: padding)
 }
 
-public func - (lhs: Tack.SuperviewPadding, view: UIView) -> Tack.Chain {
+public func - (lhs: _Tack.SuperviewPadding, view: UIView) -> _Tack.Chain {
 	return .init(
 		pairs: [.init(
 			lhs: .init(.leading, .superview, view),
@@ -75,15 +75,15 @@ public func - (lhs: Tack.SuperviewPadding, view: UIView) -> Tack.Chain {
 
 // [viewA]-(padding)-[viewB]
 
-public func - (view: UIView, rhs: Tack.Padding) -> Tack.ViewPadding {
+public func - (view: UIView, rhs: _Tack.Padding) -> _Tack.ViewPadding {
 	return .init(view: view, padding: rhs)
 }
 
-public func - (view: UIView, rhs: CGFloat) -> Tack.ViewPadding {
+public func - (view: UIView, rhs: CGFloat) -> _Tack.ViewPadding {
 	return .init(view: view, padding: ._equal(rhs, .required))
 }
 
-public func - (lhs: Tack.ViewPadding, view: UIView) -> Tack.Chain {
+public func - (lhs: _Tack.ViewPadding, view: UIView) -> _Tack.Chain {
 	return .init(
 		pairs: [.init(
 			lhs: .init(.trailing, .this, lhs.view),
@@ -94,15 +94,15 @@ public func - (lhs: Tack.ViewPadding, view: UIView) -> Tack.Chain {
 	)
 }
 
-public func - (chain: Tack.Chain, padding: Tack.Padding) -> Tack.ChainPadding {
+public func - (chain: _Tack.Chain, padding: _Tack.Padding) -> _Tack.ChainPadding {
 	return .init(chain: chain, padding: padding)
 }
 
-public func - (chain: Tack.Chain, rhs: CGFloat) -> Tack.ChainPadding {
+public func - (chain: _Tack.Chain, rhs: CGFloat) -> _Tack.ChainPadding {
 	return .init(chain: chain, padding: ._equal(rhs, .required))
 }
 
-public func - (lhs: Tack.ChainPadding, view: UIView) -> Tack.Chain {
+public func - (lhs: _Tack.ChainPadding, view: UIView) -> _Tack.Chain {
 	return .init(
 		pairs: lhs.chain.pairs + [.init(
 			lhs: lhs.chain.last,
@@ -115,15 +115,15 @@ public func - (lhs: Tack.ChainPadding, view: UIView) -> Tack.Chain {
 
 // [view]-(padding)-|
 
-public postfix func -| (padding: Tack.Padding) -> Tack.PaddingSuperview {
+public postfix func -| (padding: _Tack.Padding) -> _Tack.PaddingSuperview {
 	return .init(padding: padding)
 }
 
-public postfix func -| (padding: CGFloat) -> Tack.PaddingSuperview {
+public postfix func -| (padding: CGFloat) -> _Tack.PaddingSuperview {
 	return .init(padding: .eq(padding))
 }
 
-public func - (view: UIView, rhs: Tack.PaddingSuperview) -> Tack.Chain {
+public func - (view: UIView, rhs: _Tack.PaddingSuperview) -> _Tack.Chain {
 	return .init(
 		pairs: [.init(
 			lhs: .init(.trailing, .this, view),
@@ -134,7 +134,7 @@ public func - (view: UIView, rhs: Tack.PaddingSuperview) -> Tack.Chain {
 	)
 }
 
-public func - (chain: Tack.Chain, rhs: Tack.PaddingSuperview) -> Tack.Chain {
+public func - (chain: _Tack.Chain, rhs: _Tack.PaddingSuperview) -> _Tack.Chain {
 	return .init(
 		pairs: chain.pairs + [.init(
 			lhs: chain.last,
@@ -149,15 +149,15 @@ public func - (chain: Tack.Chain, rhs: Tack.PaddingSuperview) -> Tack.Chain {
 
 postfix operator -<|
 
-public postfix func -<| (padding: CGFloat) -> Tack.PaddingSuperviewSafeArea {
+public postfix func -<| (padding: CGFloat) -> _Tack.PaddingSuperviewSafeArea {
 	return .init(padding: .eq(padding))
 }
 
-public postfix func -<| (padding: Tack.Padding) -> Tack.PaddingSuperviewSafeArea {
+public postfix func -<| (padding: _Tack.Padding) -> _Tack.PaddingSuperviewSafeArea {
 	return .init(padding: padding)
 }
 
-public func - (view: UIView, rhs: Tack.PaddingSuperviewSafeArea) -> Tack.Chain {
+public func - (view: UIView, rhs: _Tack.PaddingSuperviewSafeArea) -> _Tack.Chain {
 	return .init(
 		pairs: [.init(
 			lhs: .init(.trailing, .this, view),
@@ -168,7 +168,7 @@ public func - (view: UIView, rhs: Tack.PaddingSuperviewSafeArea) -> Tack.Chain {
 	)
 }
 
-public func - (chain: Tack.Chain, rhs: Tack.PaddingSuperviewSafeArea) -> Tack.Chain {
+public func - (chain: _Tack.Chain, rhs: _Tack.PaddingSuperviewSafeArea) -> _Tack.Chain {
 	return .init(
 		// TODO: make this nicer
 		pairs: chain.pairs + [ .init(lhs: chain.last,
@@ -181,15 +181,15 @@ public func - (chain: Tack.Chain, rhs: Tack.PaddingSuperviewSafeArea) -> Tack.Ch
 
 prefix operator |>-
 
-public prefix func |>- (padding: CGFloat) -> Tack.PaddingSuperviewSafeArea {
+public prefix func |>- (padding: CGFloat) -> _Tack.PaddingSuperviewSafeArea {
 	return .init(padding: .eq(padding))
 }
 
-public prefix func |>- (padding: Tack.Padding) -> Tack.PaddingSuperviewSafeArea {
+public prefix func |>- (padding: _Tack.Padding) -> _Tack.PaddingSuperviewSafeArea {
 	return .init(padding: padding)
 }
 
-public func - (lhs: Tack.PaddingSuperviewSafeArea, view: UIView) -> Tack.Chain {
+public func - (lhs: _Tack.PaddingSuperviewSafeArea, view: UIView) -> _Tack.Chain {
 	return .init(
 		pairs: [.init(
 			lhs: .init(.leading, .safeAreaOfSuperview, view),
@@ -212,9 +212,20 @@ public enum Tack {
 		constraint.isActive = true
 	}
 
-	public static func activate(_ chains: OrientedChain...) {
+	public static func activate(_ chains: _Tack.OrientedChain...) {
 		NSLayoutConstraint.activate(chains.reduce([], { $0 + $1.constraints }))
 	}
+	
+	public static func H(_ chain: _Tack.Chain, alignAll alignment: _Tack.VerticalAlignment = .none) -> [NSLayoutConstraint] {
+		return chain.resolved(.horizontal, alignment: alignment.attribute())
+	}
+	
+	public static func V(_ chain: _Tack.Chain, alignAll alignment: _Tack.HorizontalAlignment = .none) -> [NSLayoutConstraint] {
+		return chain.resolved(.vertical, alignment: alignment.attribute())
+	}
+}
+
+public enum _Tack {
 
 	public struct OrientedChain {
 
@@ -260,14 +271,6 @@ public enum Tack {
 			case .right: return .right
 			}
 		}
-	}
-
-	public static func H(_ chain: Chain, alignAll alignment: VerticalAlignment = .none) -> [NSLayoutConstraint] {
-		return chain.resolved(.horizontal, alignment: alignment.attribute())
-	}
-	
-	public static func V(_ chain: Chain, alignAll alignment: HorizontalAlignment = .none) -> [NSLayoutConstraint] {
-		return chain.resolved(.vertical, alignment: alignment.attribute())
 	}
 
 	internal typealias ResolvedPadding = (NSLayoutConstraint.Relation, CGFloat, UILayoutPriority)

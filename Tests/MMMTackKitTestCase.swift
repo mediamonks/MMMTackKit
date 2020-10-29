@@ -254,7 +254,7 @@ class TackKitTestCase: XCTestCase {
 		]
 		for axis in axes {
 
-			func check(_ tack: Tack.Chain, _ visualFormat: String) {
+			func check(_ tack: _Tack.Chain, _ visualFormat: String) {
 				assertEqualConstraints(
 					tack.resolved(axis.1),
 					NSLayoutConstraint.constraints(
@@ -328,12 +328,12 @@ class TackKitTestCase: XCTestCase {
 		
 		// No specification given, should not place any constraints.
 		assertEqualConstraints(
-			Tack.constraintsAligning(view: viewA, to: container),
+			_Tack.constraintsAligning(view: viewA, to: container),
 			[]
 		)
 		
 		assertEqualConstraints(
-			Tack.constraintsAligning(view: viewA, to: container, horizontally: .fill),
+			_Tack.constraintsAligning(view: viewA, to: container, horizontally: .fill),
 			[
 				NSLayoutConstraint(
 					item: viewA, attribute: .left,
@@ -351,7 +351,7 @@ class TackKitTestCase: XCTestCase {
 		)
 		
 		assertEqualConstraints(
-			Tack.constraintsAligning(view: viewA, to: container, vertically: .fill),
+			_Tack.constraintsAligning(view: viewA, to: container, vertically: .fill),
 			[
 				NSLayoutConstraint(
 					item: viewA, attribute: .top,
@@ -369,7 +369,7 @@ class TackKitTestCase: XCTestCase {
 		)
 		
 		assertEqualConstraints(
-			Tack.constraintsAligning(
+			_Tack.constraintsAligning(
 				view: viewA, to: container,
 				horizontally: .fill, vertically: .fill,
 				insets: .init(top: 30, left: 20, bottom: 10, right: 5)
@@ -403,7 +403,7 @@ class TackKitTestCase: XCTestCase {
 		)
 		
 		assertEqualConstraints(
-			Tack.constraintsAligning(
+			_Tack.constraintsAligning(
 				view: viewA, to: container,
 				horizontally: .center, vertically: .fill,
 				insets: .init(top: 30, left: 20, bottom: 10, right: 5)
