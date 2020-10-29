@@ -21,12 +21,12 @@ extension Tack {
 	public static func align(
 		view: UIView,
 		to parent: UIView,
-		horizontally: _Tack.HorizontalAlignmentPolicy = .none,
-		vertically: _Tack.VerticalAlignmentPolicy = .none,
+		horizontally: HorizontalAlignmentPolicy = .none,
+		vertically: VerticalAlignmentPolicy = .none,
 		insets: UIEdgeInsets = .zero
 	) {
 		
-		Tack.activate(_Tack.constraintsAligning(
+		Tack.activate(Tack.constraintsAligning(
 			view: view,
 			to: parent,
 			horizontally: horizontally,
@@ -40,12 +40,12 @@ extension Tack {
 	public static func align(
 		view: UIView,
 		to parent: UILayoutGuide,
-		horizontally: _Tack.HorizontalAlignmentPolicy = .none,
-		vertically: _Tack.VerticalAlignmentPolicy = .none,
+		horizontally: HorizontalAlignmentPolicy = .none,
+		vertically: VerticalAlignmentPolicy = .none,
 		insets: UIEdgeInsets = .zero
 	) {
 		
-		Tack.activate(_Tack.constraintsAligning(
+		Tack.activate(constraintsAligning(
 			view: view,
 			to: parent,
 			horizontally: horizontally,
@@ -53,13 +53,9 @@ extension Tack {
 			insets: insets
 		))
 	}
-}
-
-extension _Tack {
 	
 	/// Return the constraints normally applied by `Tack.align()`. For more info, look at that doc-block.
-	// TODO: - Make public?
-	internal static func constraintsAligning(
+	public static func constraintsAligning(
 		view: UIView,
 		to parent: UIView,
 		horizontally: HorizontalAlignmentPolicy = .none,
@@ -71,8 +67,7 @@ extension _Tack {
 	}
 	
 	/// Return the constraints normally applied by `Tack.align()`. For more info, look at that doc-block.
-	// TODO: - Make public?
-	internal static func constraintsAligning(
+	public static func constraintsAligning(
 		view: UIView,
 		to parent: UILayoutGuide,
 		horizontally: HorizontalAlignmentPolicy = .none,
@@ -84,7 +79,7 @@ extension _Tack {
 	}
 	
 	/// Return an array with all the constraints for aligning a view, with type erased parent.
-	private static func _constraintsAligning(
+	fileprivate static func _constraintsAligning(
 		view: UIView,
 		parent: Any,
 		h: HorizontalAlignmentPolicy,
@@ -143,7 +138,7 @@ extension _Tack {
 			// We want the view to stay in-bounds.
 			NSLayoutConstraint(
 				item: view, attribute: policy.inverseAttribute(),
-				relatedBy: .lessThanOrEqual,
+				relatedBy: policy.inBoundsRelation(),
 				toItem: parent, attribute: policy.inverseAttribute(),
 				multiplier: 1, constant: -policy.inverseInset(from: insets)
 			)
@@ -295,6 +290,10 @@ internal protocol Tack_AlignmentPolicy {
 	/// For fill constraints return the 'trailing' edge.
 	func inverseAttribute() -> NSLayoutConstraint.Attribute
 	
+	/// The relation to keep this view in bounds, e.g. when aligning left, the right (inverse attribute) should be
+	/// greaterThanOrEqual.
+	func inBoundsRelation() -> NSLayoutConstraint.Relation
+	
 	/// Return the inset value for this alignment, so `.left = UIEdgeInsets.left`. Fill constraints
 	/// return the `.left / .top`.
 	func inset(from insets: UIEdgeInsets) -> CGFloat
@@ -304,7 +303,7 @@ internal protocol Tack_AlignmentPolicy {
 	func inverseInset(from insets: UIEdgeInsets) -> CGFloat
 }
 
-extension _Tack {
+extension Tack {
 
 	internal typealias AlignmentPolicy = Tack_AlignmentPolicy
 	
@@ -353,6 +352,16 @@ extension _Tack {
 			}
 		}
 		
+		internal func inBoundsRelation() -> NSLayoutConstraint.Relation {
+			switch self {
+			case .center, .golden: return .equal
+			case .left, .leading: return .lessThanOrEqual
+			case .none: return .equal
+			case .right, .trailing: return .greaterThanOrEqual
+			case .fill: return .equal
+			}
+		}
+		
 		internal func inset(from insets: UIEdgeInsets) -> CGFloat {
 			switch self {
 			case .center, .golden: return (insets.left - insets.right) * 0.5
@@ -375,7 +384,7 @@ extension _Tack {
 	}
 }
 
-extension _Tack {
+extension Tack {
 
 	// Not using HorizontalAlignment since we want fill/golden.
 	public enum VerticalAlignmentPolicy: AlignmentPolicy {
@@ -419,6 +428,16 @@ extension _Tack {
 			case .bottom: return .top
 			case .lastBaseline: return .firstBaseline
 			case .fill: return .bottom
+			}
+		}
+		
+		internal func inBoundsRelation() -> NSLayoutConstraint.Relation {
+			switch self {
+			case .center, .golden: return .equal
+			case .top, .firstBaseline: return .lessThanOrEqual
+			case .none: return .equal
+			case .bottom, .lastBaseline: return .greaterThanOrEqual
+			case .fill: return .equal
 			}
 		}
 		
