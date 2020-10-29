@@ -323,4 +323,123 @@ class TackKitTestCase: XCTestCase {
 			)
 		}
 	}
+	
+	func testAlignmentHelpers() {
+		
+		// No specification given, should not place any constraints.
+		assertEqualConstraints(
+			Tack.constraintsAligning(view: viewA, to: container),
+			[]
+		)
+		
+		assertEqualConstraints(
+			Tack.constraintsAligning(view: viewA, to: container, horizontally: .fill),
+			[
+				NSLayoutConstraint(
+					item: viewA, attribute: .left,
+					relatedBy: .equal,
+					toItem: container, attribute: .left,
+					multiplier: 1, constant: 0
+				),
+				NSLayoutConstraint(
+					item: viewA, attribute: .right,
+					relatedBy: .equal,
+					toItem: container, attribute: .right,
+					multiplier: 1, constant: 0
+				)
+			]
+		)
+		
+		assertEqualConstraints(
+			Tack.constraintsAligning(view: viewA, to: container, vertically: .fill),
+			[
+				NSLayoutConstraint(
+					item: viewA, attribute: .top,
+					relatedBy: .equal,
+					toItem: container, attribute: .top,
+					multiplier: 1, constant: 0
+				),
+				NSLayoutConstraint(
+					item: viewA, attribute: .bottom,
+					relatedBy: .equal,
+					toItem: container, attribute: .bottom,
+					multiplier: 1, constant: 0
+				)
+			]
+		)
+		
+		assertEqualConstraints(
+			Tack.constraintsAligning(
+				view: viewA, to: container,
+				horizontally: .fill, vertically: .fill,
+				insets: .init(top: 30, left: 20, bottom: 10, right: 5)
+			),
+			[
+				NSLayoutConstraint(
+					item: viewA, attribute: .left,
+					relatedBy: .equal,
+					toItem: container, attribute: .left,
+					multiplier: 1, constant: 20
+				),
+				NSLayoutConstraint(
+					item: viewA, attribute: .right,
+					relatedBy: .equal,
+					toItem: container, attribute: .right,
+					multiplier: 1, constant: -5
+				),
+				NSLayoutConstraint(
+					item: viewA, attribute: .top,
+					relatedBy: .equal,
+					toItem: container, attribute: .top,
+					multiplier: 1, constant: 30
+				),
+				NSLayoutConstraint(
+					item: viewA, attribute: .bottom,
+					relatedBy: .equal,
+					toItem: container, attribute: .bottom,
+					multiplier: 1, constant: -10
+				)
+			]
+		)
+		
+		assertEqualConstraints(
+			Tack.constraintsAligning(
+				view: viewA, to: container,
+				horizontally: .center, vertically: .fill,
+				insets: .init(top: 30, left: 20, bottom: 10, right: 5)
+			),
+			[
+				NSLayoutConstraint(
+					item: viewA, attribute: .centerX,
+					relatedBy: .equal,
+					toItem: container, attribute: .centerX,
+					multiplier: 1, constant: 7.5
+				),
+				NSLayoutConstraint(
+					item: viewA, attribute: .left,
+					relatedBy: .greaterThanOrEqual,
+					toItem: container, attribute: .left,
+					multiplier: 1, constant: 20
+				),
+				NSLayoutConstraint(
+					item: viewA, attribute: .right,
+					relatedBy: .lessThanOrEqual,
+					toItem: container, attribute: .right,
+					multiplier: 1, constant: -5
+				),
+				NSLayoutConstraint(
+					item: viewA, attribute: .top,
+					relatedBy: .equal,
+					toItem: container, attribute: .top,
+					multiplier: 1, constant: 30
+				),
+				NSLayoutConstraint(
+					item: viewA, attribute: .bottom,
+					relatedBy: .equal,
+					toItem: container, attribute: .bottom,
+					multiplier: 1, constant: -10
+				)
+			]
+		)
+	}
 }
