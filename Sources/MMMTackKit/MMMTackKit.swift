@@ -229,7 +229,7 @@ public enum Tack {
 		}
 	}
 
-	public enum VerticalAlignment: Int {
+	public enum VerticalAlignment {
 
 		case none, top, firstBaseline, centerY, lastBaseline, bottom
 
@@ -248,14 +248,14 @@ public enum Tack {
 
 	public enum HorizontalAlignment {
 	
-		case none, leading, left, center, trailing, right
+		case none, leading, left, centerX, trailing, right
 
 		internal func attribute() -> NSLayoutConstraint.Attribute {
 			switch self {
 			case .none: return .notAnAttribute
 			case .leading: return .leading
 			case .left: return .left
-			case .center: return .centerX
+			case .centerX: return .centerX
 			case .trailing: return .trailing
 			case .right: return .right
 			}
