@@ -375,8 +375,8 @@ extension Tack {
 		internal func inverseInset(from insets: UIEdgeInsets) -> CGFloat {
 			switch self {
 			case .center, .golden: return (insets.left - insets.right) * 0.5
-			case .leading, .left: return -insets.left
-			case .trailing, .right: return insets.right
+			case .leading, .left: return -insets.right
+			case .trailing, .right: return insets.left
 			case .fill: return insets.right
 			case .none: return 0
 			}
@@ -454,8 +454,8 @@ extension Tack {
 		internal func inverseInset(from insets: UIEdgeInsets) -> CGFloat {
 			switch self {
 			case .center, .golden: return (insets.top - insets.bottom) * 0.5
-			case .top, .firstBaseline: return -insets.top
-			case .bottom, .lastBaseline: return insets.bottom
+			case .top, .firstBaseline: return -insets.bottom
+			case .bottom, .lastBaseline: return insets.top
 			case .fill: return insets.bottom
 			case .none: return 0
 			}
