@@ -212,8 +212,8 @@ public enum Tack {
 		constraint.isActive = true
 	}
 
-	public static func activate(_ chain: OrientedChain) {
-		NSLayoutConstraint.activate(chain.constraints)
+	public static func activate(_ chains: OrientedChain...) {
+		NSLayoutConstraint.activate(chains.reduce([], { $0 + $1.constraints }))
 	}
 
 	public struct OrientedChain {
