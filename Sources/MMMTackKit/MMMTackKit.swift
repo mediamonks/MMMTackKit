@@ -381,6 +381,8 @@ public enum Tack {
 					case .trailing:
 						return .bottom
 					}
+				@unknown default:
+					preconditionFailure("Got an unknown case as NSLayoutConstraint.Attribute, is there an update available?")
 				}
 			}()
 
