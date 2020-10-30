@@ -5,6 +5,33 @@
 
 import UIKit
 
+// Deprecated methods, should be removed in the future / next minor release. Keeping them
+// on top so it's not overseen.
+extension Tack {
+	
+	@available(*, deprecated, renamed: "constraints(aligning:to:horizontally:vertically:insets:)")
+	public static func constraintsAligning(
+		view: UIView,
+		to parent: UIView,
+		horizontally: HorizontalAlignmentPolicy = .none,
+		vertically: VerticalAlignmentPolicy = .none,
+		insets: UIEdgeInsets = .zero
+	) -> [NSLayoutConstraint] {
+		return constraints(aligning: view, to: parent, horizontally: horizontally, vertically: vertically, insets: insets)
+	}
+	
+	@available(*, deprecated, renamed: "constraints(aligning:to:horizontally:vertically:insets:)")
+	public static func constraintsAligning(
+		view: UIView,
+		to parent: UILayoutGuide,
+		horizontally: HorizontalAlignmentPolicy = .none,
+		vertically: VerticalAlignmentPolicy = .none,
+		insets: UIEdgeInsets = .zero
+	) -> [NSLayoutConstraint] {
+		return constraints(aligning: view, to: parent, horizontally: horizontally, vertically: vertically, insets: insets)
+	}
+}
+
 extension Tack {
 
 	/// Align a view to another view / parent (receiver), using a horizontal and vertical alignment policy. The insets will be
@@ -26,8 +53,8 @@ extension Tack {
 		insets: UIEdgeInsets = .zero
 	) {
 		
-		Tack.activate(Tack.constraintsAligning(
-			view: view,
+		Tack.activate(Tack.constraints(
+			aligning: view,
 			to: parent,
 			horizontally: horizontally,
 			vertically: vertically,
@@ -45,8 +72,8 @@ extension Tack {
 		insets: UIEdgeInsets = .zero
 	) {
 		
-		Tack.activate(constraintsAligning(
-			view: view,
+		Tack.activate(constraints(
+			aligning: view,
 			to: parent,
 			horizontally: horizontally,
 			vertically: vertically,
@@ -55,32 +82,33 @@ extension Tack {
 	}
 	
 	/// Return the constraints normally applied by `Tack.align()`. For more info, look at that doc-block.
-	public static func constraintsAligning(
-		view: UIView,
+	/// - Returns: An array containing the constraints
+	public static func constraints(
+		aligning view: UIView,
 		to parent: UIView,
 		horizontally: HorizontalAlignmentPolicy = .none,
 		vertically: VerticalAlignmentPolicy = .none,
 		insets: UIEdgeInsets = .zero
 	) -> [NSLayoutConstraint] {
 		
-		return _constraintsAligning(view: view, parent: parent, h: horizontally, v: vertically, insets: insets)
+		return _constraints(aligning: view, parent: parent, h: horizontally, v: vertically, insets: insets)
 	}
 	
 	/// Return the constraints normally applied by `Tack.align()`. For more info, look at that doc-block.
-	public static func constraintsAligning(
-		view: UIView,
+	public static func constraints(
+		aligning view: UIView,
 		to parent: UILayoutGuide,
 		horizontally: HorizontalAlignmentPolicy = .none,
 		vertically: VerticalAlignmentPolicy = .none,
 		insets: UIEdgeInsets = .zero
 	) -> [NSLayoutConstraint] {
 		
-		return _constraintsAligning(view: view, parent: parent, h: horizontally, v: vertically, insets: insets)
+		return _constraints(aligning: view, parent: parent, h: horizontally, v: vertically, insets: insets)
 	}
 	
 	/// Return an array with all the constraints for aligning a view, with type erased parent.
-	fileprivate static func _constraintsAligning(
-		view: UIView,
+	fileprivate static func _constraints(
+		aligning view: UIView,
 		parent: Any,
 		h: HorizontalAlignmentPolicy,
 		v: VerticalAlignmentPolicy,
