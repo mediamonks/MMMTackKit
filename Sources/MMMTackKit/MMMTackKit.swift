@@ -208,6 +208,10 @@ public enum Tack {
 		NSLayoutConstraint.activate(constraints)
 	}
 
+	public static func deactivate(_ constraints: [NSLayoutConstraint]) {
+		NSLayoutConstraint.deactivate(constraints)
+	}
+
 	public static func activate(_ constraint: NSLayoutConstraint) {
 		constraint.isActive = true
 	}
@@ -215,7 +219,11 @@ public enum Tack {
 	public static func activate(_ chains: _Tack.OrientedChain...) {
 		NSLayoutConstraint.activate(chains.reduce([], { $0 + $1.constraints }))
 	}
-	
+
+	public static func constraints(_ chains: _Tack.OrientedChain...) -> [NSLayoutConstraint] {
+		chains.flatMap { $0.constraints }
+	}
+
 	public static func H(_ chain: _Tack.Chain, alignAll alignment: _Tack.VerticalAlignment = .none) -> [NSLayoutConstraint] {
 		return chain.resolved(.horizontal, alignment: alignment.attribute())
 	}
