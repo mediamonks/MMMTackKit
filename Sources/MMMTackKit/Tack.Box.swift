@@ -20,10 +20,6 @@ extension Tack {
 	/// to actually activate/deactive the constraints.
 	final public class Box<Statable: Hashable> {
 		
-		public enum BoxError: Error {
-			case stateNotFound, stateActive
-		}
-		
 		private var currentState: Set<Statable>
 		private var previousCurrentState: Set<Statable>?
 		
@@ -51,32 +47,41 @@ extension Tack {
 		}
 		
 		/// Add constraints to the `Box` for a given state.
-		public func add(state: Statable, _ contraints: [NSLayoutConstraint]...) {
-			add(contraints: contraints.flatMap { $0 }, state: state)
+		public func add(state: Statable, constraints: [NSLayoutConstraint]...) {
+			add(constraints: constraints.flatMap { $0 }, state: state)
+		}
+		
+		public subscript(states: Statable...) -> [NSLayoutConstraint] {
+			set {
+				add(states: Set<Statable>.init(states), constraints: newValue)
+			}
+			get {
+				return states.compactMap { storage[$0] }.flatMap { $0 }
+			}
 		}
 		
 		/// Add constraints to the `Box` for a given set of states.
-		public func add(states: Set<Statable>, _ contraints: [NSLayoutConstraint]...) {
+		public func add(states: Set<Statable>, constraints: [NSLayoutConstraint]...) {
 			states.forEach { state in
-				add(contraints: contraints.flatMap { $0 }, state: state)
+				add(constraints: constraints.flatMap { $0 }, state: state)
 			}
 		}
 		
-		private func add(contraints: [NSLayoutConstraint], state: Statable) {
+		private func add(constraints: [NSLayoutConstraint], state: Statable) {
 			
-			var allContraints = contraints
+			var allconstraints = constraints
 			
 			if storage.keys.contains(state), let current = storage[state] {
 				// Already have storage for this state, let's add the constraints.
-				allContraints.append(contentsOf: current)
+				allconstraints.append(contentsOf: current)
 			}
 			
-			storage[state] = allContraints
+			storage[state] = allconstraints
 			
 			if currentState.contains(state) {
 				// We're already presenting this state; let's make sure to activate the new
 				// constraints right away.
-				Tack.activate(contraints)
+				Tack.activate(constraints)
 			}
 		}
 		
@@ -87,14 +92,16 @@ extension Tack {
 		/// throws `stateActive` if you try to remove constraints while currently in this state.
 		/// - Returns: The constraints known in the box for this state.
 		@discardableResult
-		public func remove(state: Statable) throws -> [NSLayoutConstraint] {
+		public func remove(state: Statable) -> [NSLayoutConstraint] {
 			
 			guard !currentState.contains(state) else {
-				throw BoxError.stateActive
+				assertionFailure("Removing a state \(state) that's currently active")
+				return []
 			}
 			
 			guard let constraints = storage.removeValue(forKey: state) else {
-				throw BoxError.stateNotFound
+				assertionFailure("Removing a state \(state) that isn't added")
+				return []
 			}
 			
 			return constraints
@@ -103,20 +110,20 @@ extension Tack {
 		/// Set the current state. Please note you'll have to call `setNeedsUpdateConstraints()` after this.
 		/// - Parameter state: The state to activate.
 		/// - Throws: Throws a `stateNotFound` error if you try to activate a state that isn't added to the box.
-		public func set(state: Statable) throws {
-			try set(states: [state])
+		public func set(state: Statable) {
+			set(states: [state])
 		}
 		
 		/// Set the current states. Please note you'll have to call `setNeedsUpdateConstraints()` after this.
 		/// - Parameter state: The states to activate.
 		/// - Throws: Throws a `stateNotFound` error if you try to activate a state that isn't added to the box.
-		public func set(states: Set<Statable>) throws {
+		public func set(states: Set<Statable>) {
 			
 			previousCurrentState = currentState
 			
-			try states.forEach { state in
+			states.forEach { state in
 				if !storage.keys.contains(state) {
-					throw BoxError.stateNotFound
+					assertionFailure("Trying to set current state to \(states) but it isn't added")
 				}
 			}
 			
@@ -135,7 +142,7 @@ extension Tack {
 					.forEach { current in
 						
 						guard let constraints = storage[current] else {
-							// Not throwing here, could be that a user removed the
+							// Not asserting here, could be that a user removed the
 							// constraints for this state.
 							return
 						}
