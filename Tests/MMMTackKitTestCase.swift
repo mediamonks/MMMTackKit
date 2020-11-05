@@ -101,7 +101,7 @@ class TackKitTestCase: XCTestCase {
 	@objc func testTackKitPerformance() {
 		self.measure {
 			for _ in 1...iterations {
-				let _ = Tack.H(|-(>=padding)-viewA-padding-viewB)
+				let _ = Tack.H(|-(>=padding)-viewA-(padding)-viewB)
 			}
 		}
 	}
@@ -109,19 +109,15 @@ class TackKitTestCase: XCTestCase {
 	// Not really a test, just to check if different combinations compile.
 	func testBuilding() {
 
-		print(Tack.H(|-.eq(padding)-viewA))
 		print(Tack.H(|-(==padding)-viewA))
 		print(Tack.H(|-(padding)-viewA))
 		print(Tack.H(|-padding-viewA))
 
-		print(Tack.H(|-.ge(padding)-viewA))
 		print(Tack.H(|-(>=padding)-viewA))
 
-		print(Tack.H(viewA-(.eq(padding))-viewB))
 		print(Tack.H(viewA-(padding)-viewB))
 		print(Tack.H(viewA-padding-viewB))
 
-		print(Tack.H(viewB-(.eq(padding))-|))
 		print(Tack.H(viewB-(padding)-|))
 		print(Tack.H(viewB-padding-|))
 	}
@@ -254,7 +250,7 @@ class TackKitTestCase: XCTestCase {
 		]
 		for axis in axes {
 
-			func check(_ tack: _Tack.Chain, _ visualFormat: String) {
+			func check(_ tack: Tack.Chain, _ visualFormat: String) {
 				assertEqualConstraints(
 					tack.resolved(axis.1),
 					NSLayoutConstraint.constraints(
@@ -270,16 +266,8 @@ class TackKitTestCase: XCTestCase {
 				"|-(padding)-[viewA]"
 			)
 			check(
-				(|-(.eq(padding, .defaultHigh - 1))-viewA),
-				"|-(padding@749)-[viewA]"
-			)
-			check(
 				(|-(padding^749)-viewA),
 				"|-(padding@749)-[viewA]"
-			)
-			check(
-				(|-.ge(padding, .defaultHigh - 1)-viewA),
-				"|-(>=padding@749)-[viewA]"
 			)
 			check(
 				(|-(>=padding^749)-viewA),
@@ -292,23 +280,23 @@ class TackKitTestCase: XCTestCase {
 				"[viewA]-(padding)-[viewB]"
 			)
 			check(
-				(viewA-(.eq(padding))-viewB),
+				(viewA-(padding)-viewB),
 				"[viewA]-(padding)-[viewB]"
 			)
 			check(
-				(viewA-(.ge(padding, 749))-viewB),
+				(viewA-(>=padding^749)-viewB),
 				"[viewA]-(>=padding@749)-[viewB]"
 			)
 
 			// viewA - padding -|
 			check(
-				(viewA-(.eq(padding))-|),
+				(viewA-(padding)-|),
 				"[viewA]-(padding)-|"
 			)
 
 			// A chain.
 			check(
-				|-(.ge2(padding, 749))-viewA-(>=padding)-viewB-(padding^249)-|,
+				|-(>==padding^749)-viewA-(>=padding)-viewB-(padding^249)-|,
 				"|-(>=padding,padding@749)-[viewA]-(>=padding)-[viewB]-(padding@249)-|"
 			)
 
@@ -327,13 +315,14 @@ class TackKitTestCase: XCTestCase {
 	func testAlignmentHelpers() {
 		
 		// No specification given, should not place any constraints.
+		// TODO: maybe should be an illegal combination instead or better have 3 versions of that excluding the one without labels?
 		assertEqualConstraints(
-			Tack.constraintsAligning(view: viewA, to: container),
+			Tack.constraints(aligning: viewA, to: container),
 			[]
 		)
 		
 		assertEqualConstraints(
-			Tack.constraintsAligning(view: viewA, to: container, horizontally: .fill),
+			Tack.constraints(aligning: viewA, to: container, horizontally: .fill),
 			[
 				NSLayoutConstraint(
 					item: viewA, attribute: .left,
@@ -351,7 +340,7 @@ class TackKitTestCase: XCTestCase {
 		)
 		
 		assertEqualConstraints(
-			Tack.constraintsAligning(view: viewA, to: container, vertically: .fill),
+			Tack.constraints(aligning: viewA, to: container, vertically: .fill),
 			[
 				NSLayoutConstraint(
 					item: viewA, attribute: .top,
@@ -367,10 +356,12 @@ class TackKitTestCase: XCTestCase {
 				)
 			]
 		)
+
+		// TODO: maybe it should use leading/trailing instead of left/right?
 		
 		assertEqualConstraints(
-			Tack.constraintsAligning(
-				view: viewA, to: container,
+			Tack.constraints(
+				aligning: viewA, to: container,
 				horizontally: .fill, vertically: .fill,
 				insets: .init(top: 30, left: 20, bottom: 10, right: 5)
 			),
@@ -403,8 +394,8 @@ class TackKitTestCase: XCTestCase {
 		)
 		
 		assertEqualConstraints(
-			Tack.constraintsAligning(
-				view: viewA, to: container,
+			Tack.constraints(
+				aligning: viewA, to: container,
 				horizontally: .center, vertically: .fill,
 				insets: .init(top: 30, left: 20, bottom: 10, right: 5)
 			),

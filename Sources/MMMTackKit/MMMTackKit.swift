@@ -14,17 +14,19 @@ prefix operator >==
 prefix operator ==
 
 public prefix func >= (padding: CGFloat) -> _Tack.Padding {
-	return .ge(padding)
+	return ._greaterThanOrEqual(padding, .required)
 }
 
-/// A "double pin". Specifying `.ge2(priority)` or `>==padding^priority`
-/// is the same as the use of `">=padding,==padding@priority"` in VFL.
+/// A "double pin", that is `>==padding^priority` is the same as `">=padding,==padding@priority"` in VFL.
+/// Uses `249` aka `.defaultLow - 1` priority by default, so can simply use `>==padding` when need `>==padding^249`.
+///
+/// The behavior of a double pin is what beginners often expect from a regular `>=padding` constraint.
 public prefix func >== (padding: CGFloat) -> _Tack.Padding {
-	return .ge2(padding, .defaultLow - 1)
+	return ._doublePin(padding, .defaultLow - 1)
 }
 
 public prefix func == (padding: CGFloat) -> _Tack.Padding {
-	return .eq(padding)
+	return ._equal(padding, .required)
 }
 
 // For something close to `padding@249` (cannot use @ as operator).
@@ -62,7 +64,7 @@ public prefix func |- (padding: _Tack.Padding) -> _Tack.SuperviewPadding {
 	return .init(padding: padding)
 }
 
-public func - (lhs: _Tack.SuperviewPadding, view: UIView) -> _Tack.Chain {
+public func - (lhs: _Tack.SuperviewPadding, view: UIView) -> Tack.Chain {
 	return .init(
 		pairs: [.init(
 			lhs: .init(.leading, .superview, view),
@@ -83,7 +85,7 @@ public func - (view: UIView, rhs: CGFloat) -> _Tack.ViewPadding {
 	return .init(view: view, padding: ._equal(rhs, .required))
 }
 
-public func - (lhs: _Tack.ViewPadding, view: UIView) -> _Tack.Chain {
+public func - (lhs: _Tack.ViewPadding, view: UIView) -> Tack.Chain {
 	return .init(
 		pairs: [.init(
 			lhs: .init(.trailing, .this, lhs.view),
@@ -94,15 +96,15 @@ public func - (lhs: _Tack.ViewPadding, view: UIView) -> _Tack.Chain {
 	)
 }
 
-public func - (chain: _Tack.Chain, padding: _Tack.Padding) -> _Tack.ChainPadding {
+public func - (chain: Tack.Chain, padding: _Tack.Padding) -> _Tack.ChainPadding {
 	return .init(chain: chain, padding: padding)
 }
 
-public func - (chain: _Tack.Chain, rhs: CGFloat) -> _Tack.ChainPadding {
+public func - (chain: Tack.Chain, rhs: CGFloat) -> _Tack.ChainPadding {
 	return .init(chain: chain, padding: ._equal(rhs, .required))
 }
 
-public func - (lhs: _Tack.ChainPadding, view: UIView) -> _Tack.Chain {
+public func - (lhs: _Tack.ChainPadding, view: UIView) -> Tack.Chain {
 	return .init(
 		pairs: lhs.chain.pairs + [.init(
 			lhs: lhs.chain.last,
@@ -120,10 +122,10 @@ public postfix func -| (padding: _Tack.Padding) -> _Tack.PaddingSuperview {
 }
 
 public postfix func -| (padding: CGFloat) -> _Tack.PaddingSuperview {
-	return .init(padding: .eq(padding))
+	return .init(padding: ._equal(padding, .required))
 }
 
-public func - (view: UIView, rhs: _Tack.PaddingSuperview) -> _Tack.Chain {
+public func - (view: UIView, rhs: _Tack.PaddingSuperview) -> Tack.Chain {
 	return .init(
 		pairs: [.init(
 			lhs: .init(.trailing, .this, view),
@@ -134,7 +136,7 @@ public func - (view: UIView, rhs: _Tack.PaddingSuperview) -> _Tack.Chain {
 	)
 }
 
-public func - (chain: _Tack.Chain, rhs: _Tack.PaddingSuperview) -> _Tack.Chain {
+public func - (chain: Tack.Chain, rhs: _Tack.PaddingSuperview) -> Tack.Chain {
 	return .init(
 		pairs: chain.pairs + [.init(
 			lhs: chain.last,
@@ -150,14 +152,14 @@ public func - (chain: _Tack.Chain, rhs: _Tack.PaddingSuperview) -> _Tack.Chain {
 postfix operator -<|
 
 public postfix func -<| (padding: CGFloat) -> _Tack.PaddingSuperviewSafeArea {
-	return .init(padding: .eq(padding))
+	return .init(padding: ._equal(padding, .required))
 }
 
 public postfix func -<| (padding: _Tack.Padding) -> _Tack.PaddingSuperviewSafeArea {
 	return .init(padding: padding)
 }
 
-public func - (view: UIView, rhs: _Tack.PaddingSuperviewSafeArea) -> _Tack.Chain {
+public func - (view: UIView, rhs: _Tack.PaddingSuperviewSafeArea) -> Tack.Chain {
 	return .init(
 		pairs: [.init(
 			lhs: .init(.trailing, .this, view),
@@ -168,7 +170,7 @@ public func - (view: UIView, rhs: _Tack.PaddingSuperviewSafeArea) -> _Tack.Chain
 	)
 }
 
-public func - (chain: _Tack.Chain, rhs: _Tack.PaddingSuperviewSafeArea) -> _Tack.Chain {
+public func - (chain: Tack.Chain, rhs: _Tack.PaddingSuperviewSafeArea) -> Tack.Chain {
 	return .init(
 		// TODO: make this nicer
 		pairs: chain.pairs + [ .init(lhs: chain.last,
@@ -182,14 +184,14 @@ public func - (chain: _Tack.Chain, rhs: _Tack.PaddingSuperviewSafeArea) -> _Tack
 prefix operator |>-
 
 public prefix func |>- (padding: CGFloat) -> _Tack.PaddingSuperviewSafeArea {
-	return .init(padding: .eq(padding))
+	return .init(padding: ._equal(padding, .required))
 }
 
 public prefix func |>- (padding: _Tack.Padding) -> _Tack.PaddingSuperviewSafeArea {
 	return .init(padding: padding)
 }
 
-public func - (lhs: _Tack.PaddingSuperviewSafeArea, view: UIView) -> _Tack.Chain {
+public func - (lhs: _Tack.PaddingSuperviewSafeArea, view: UIView) -> Tack.Chain {
 	return .init(
 		pairs: [.init(
 			lhs: .init(.leading, .safeAreaOfSuperview, view),
@@ -216,36 +218,20 @@ public enum Tack {
 		constraint.isActive = true
 	}
 
-	public static func activate(_ chains: _Tack.OrientedChain...) {
+	public static func activate(_ chains: Tack.OrientedChain...) {
 		NSLayoutConstraint.activate(chains.flatMap { $0.constraints })
 	}
 
-	public static func constraints(_ chains: _Tack.OrientedChain...) -> [NSLayoutConstraint] {
+	public static func constraints(_ chains: Tack.OrientedChain...) -> [NSLayoutConstraint] {
 		chains.flatMap { $0.constraints }
 	}
 
-	public static func H(_ chain: _Tack.Chain, alignAll alignment: _Tack.VerticalAlignment = .none) -> [NSLayoutConstraint] {
+	public static func H(_ chain: Tack.Chain, alignAll alignment: Tack.VerticalAlignment = .none) -> [NSLayoutConstraint] {
 		return chain.resolved(.horizontal, alignment: alignment.attribute())
 	}
 	
-	public static func V(_ chain: _Tack.Chain, alignAll alignment: _Tack.HorizontalAlignment = .none) -> [NSLayoutConstraint] {
+	public static func V(_ chain: Tack.Chain, alignAll alignment: Tack.HorizontalAlignment = .none) -> [NSLayoutConstraint] {
 		return chain.resolved(.vertical, alignment: alignment.attribute())
-	}
-}
-
-public enum _Tack {
-
-	public struct OrientedChain {
-
-		internal let constraints: [NSLayoutConstraint]
-
-		public static func H(_ chain: Chain, alignAll alignment: VerticalAlignment = .none) -> Self {
-			.init(constraints: chain.resolved(.horizontal, alignment: alignment.attribute()))
-		}
-
-		public static func V(_ chain: Chain, alignAll alignment: HorizontalAlignment = .none) -> Self {
-			.init(constraints: chain.resolved(.vertical, alignment: alignment.attribute()))
-		}
 	}
 
 	public enum VerticalAlignment {
@@ -266,7 +252,7 @@ public enum _Tack {
 	}
 
 	public enum HorizontalAlignment {
-	
+
 		case none, leading, left, centerX, trailing, right
 
 		internal func attribute() -> NSLayoutConstraint.Attribute {
@@ -281,38 +267,89 @@ public enum _Tack {
 		}
 	}
 
+	public struct OrientedChain {
+
+		internal let constraints: [NSLayoutConstraint]
+
+		public static func H(_ chain: Tack.Chain, alignAll alignment: Tack.VerticalAlignment = .none) -> Self {
+			.init(constraints: chain.resolved(.horizontal, alignment: alignment.attribute()))
+		}
+
+		public static func V(_ chain: Tack.Chain, alignAll alignment: Tack.HorizontalAlignment = .none) -> Self {
+			.init(constraints: chain.resolved(.vertical, alignment: alignment.attribute()))
+		}
+	}
+
+	public struct Chain {
+
+		let pairs: [_Tack.Pair]
+		let last: _Tack.Anchor // TODO: use the last view instead
+
+		internal func resolved(_ axis: NSLayoutConstraint.Axis, alignment: NSLayoutConstraint.Attribute = .notAnAttribute) -> [NSLayoutConstraint] {
+
+			func constraint(_ lhs: _Tack.ResolvedSide, _ rhs: _Tack.ResolvedSide, _ padding: _Tack.ResolvedPadding) -> NSLayoutConstraint {
+				let c = NSLayoutConstraint(
+					item: rhs.0, attribute: rhs.1,
+					relatedBy: padding.0,
+					toItem: lhs.0, attribute: lhs.1,
+					multiplier: 1, constant: padding.1
+				)
+				c.priority = padding.2
+				return c
+			}
+
+			var result: [NSLayoutConstraint] = []
+			for pair in pairs {
+
+				let lhs = pair.lhs.resolved(axis: axis)
+				let rhs = pair.rhs.resolved(axis: axis)
+
+				switch pair.padding {
+				case let ._equal(value, prio):
+					result.append(constraint(lhs, rhs, (.equal, value, prio)))
+				case let ._greaterThanOrEqual(value, prio):
+					result.append(constraint(lhs, rhs, (.greaterThanOrEqual, value, prio)))
+				case let ._doublePin(value, prio):
+					result.append(constraint(lhs, rhs, (.greaterThanOrEqual, value, .required)))
+					result.append(constraint(lhs, rhs, (.equal, value, prio)))
+				}
+			}
+
+			if alignment != .notAnAttribute {
+				var views: [UIView] = []
+				for pair in pairs {
+					let last = views.last
+					if pair.lhs.ref == .this && pair.lhs.view != last {
+						views.append(pair.lhs.view)
+					}
+					if pair.rhs.ref == .this && pair.lhs.view != last {
+						views.append(pair.rhs.view)
+					}
+				}
+				var i: Int = 0
+				while i < views.count - 1 {
+					result.append(.init(
+						item: views[i], attribute: alignment,
+						relatedBy: .equal,
+						toItem: views[i + 1], attribute: alignment,
+						multiplier: 1, constant: 0
+					))
+					i += 1
+				}
+			}
+
+			return result
+		}
+	}
+
+}
+
+public enum _Tack {
+
 	internal typealias ResolvedPadding = (NSLayoutConstraint.Relation, CGFloat, UILayoutPriority)
 
 	// TODO: can be a struct eventually, storing already "resolved" array
 	public enum Padding {
-
-		public static func eq(_ value: CGFloat, _ priority: UILayoutPriority = .required) -> Padding {
-			return ._equal(value, priority)
-		}
-		/// (To allow using regular floats without casting to UILayoutPriority.)
-		public static func eq(_ value: CGFloat, _ priority: Float) -> Padding {
-			return ._equal(value, UILayoutPriority(priority))
-		}
-
-		public static func ge(_ value: CGFloat, _ priority: UILayoutPriority = .required) -> Padding {
-			return ._greaterThanOrEqual(value, priority)
-		}
-		/// (To allow using regular floats without casting to UILayoutPriority.)
-		public static func ge(_ value: CGFloat, _ priority: Float) -> Padding {
-			return ._greaterThanOrEqual(value, UILayoutPriority(priority))
-		}
-
-		/// A "double pin". Specifying `.ge2(priority)` or `>==padding^priority`
-		/// is the same as the use of `">=padding,==padding@priority"` in VFL.
-		public static func ge2(_ value: CGFloat, _ priority: UILayoutPriority) -> Padding {
-			return ._doublePin(value, priority)
-		}
-		/// A "double pin". Specifying `.ge2(priority)` or `>==padding^priority`
-		/// is the same as the use of `">=padding,==padding@priority"` in VFL.
-		public static func ge2(_ value: CGFloat, _ priority: Float) -> Padding {
-			return ._doublePin(value, UILayoutPriority(priority))
-		}
-
 		case _equal(CGFloat, UILayoutPriority)
 		case _greaterThanOrEqual(CGFloat, UILayoutPriority)
 		case _doublePin(CGFloat, UILayoutPriority)
@@ -407,70 +444,8 @@ public enum _Tack {
 		let rhs: Anchor
 	}
 
-	public struct Chain {
-
-		let pairs: [Pair]
-		let last: Anchor // TODO: use the last view instead
-
-		internal func resolved(_ axis: NSLayoutConstraint.Axis, alignment: NSLayoutConstraint.Attribute = .notAnAttribute) -> [NSLayoutConstraint] {
-
-			func constraint(_ lhs: ResolvedSide, _ rhs: ResolvedSide, _ padding: ResolvedPadding) -> NSLayoutConstraint {
-				let c = NSLayoutConstraint(
-					item: rhs.0, attribute: rhs.1,
-					relatedBy: padding.0,
-					toItem: lhs.0, attribute: lhs.1,
-					multiplier: 1, constant: padding.1
-				)
-				c.priority = padding.2
-				return c
-			}
-
-			var result: [NSLayoutConstraint] = []
-			for pair in pairs {
-
-				let lhs = pair.lhs.resolved(axis: axis)
-				let rhs = pair.rhs.resolved(axis: axis)
-
-				switch pair.padding {
-				case let ._equal(value, prio):
-					result.append(constraint(lhs, rhs, (.equal, value, prio)))
-				case let ._greaterThanOrEqual(value, prio):
-					result.append(constraint(lhs, rhs, (.greaterThanOrEqual, value, prio)))
-				case let ._doublePin(value, prio):
-					result.append(constraint(lhs, rhs, (.greaterThanOrEqual, value, .required)))
-					result.append(constraint(lhs, rhs, (.equal, value, prio)))
-				}
-			}
-
-			if alignment != .notAnAttribute {
-				var views: [UIView] = []
-				for pair in pairs {
-					let last = views.last
-					if pair.lhs.ref == .this && pair.lhs.view != last {
-						views.append(pair.lhs.view)
-					}
-					if pair.rhs.ref == .this && pair.lhs.view != last {
-						views.append(pair.rhs.view)
-					}
-				}
-				var i: Int = 0
-				while i < views.count - 1 {
-					result.append(.init(
-						item: views[i], attribute: alignment,
-						relatedBy: .equal,
-						toItem: views[i + 1], attribute: alignment,
-						multiplier: 1, constant: 0
-					))
-					i += 1
-				}
-			}
-
-			return result
-		}
-	}
-
 	public struct ChainPadding {
-		let chain: Chain
+		let chain: Tack.Chain
 		let padding: Padding
 	}
 }
