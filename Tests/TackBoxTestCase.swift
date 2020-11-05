@@ -33,7 +33,7 @@ class TackBoxTestCase: XCTestCase {
 		viewC = UIView()
 		container.addSubview(viewC)
 	}
-	
+
 	func testBasics() {
 		
 		let box = Tack.Box<State>()
@@ -88,7 +88,7 @@ class TackBoxTestCase: XCTestCase {
 	
 	func testMultiple() {
 		
-		let box = Tack.Box<State>()
+		let box = Tack.Box<State>(state: .one)
 		
 		let aConstraints = Tack.constraints(.H(|-20-viewA))
 		let bConstraints = Tack.constraints(.H(|-40-viewA))
@@ -98,7 +98,6 @@ class TackBoxTestCase: XCTestCase {
 		box[.two] = bConstraints
 		box[.three] = cConstraints
 		
-		box.set(state: .one)
 		box.updateConstraints()
 		
 		XCTAssert(aConstraints.allSatisfy { $0.isActive })
@@ -145,5 +144,8 @@ class TackBoxTestCase: XCTestCase {
 		XCTAssertFalse(aConstraints.allSatisfy { $0.isActive })
 		XCTAssert(bConstraints.allSatisfy { $0.isActive })
 		XCTAssert(cConstraints.allSatisfy { $0.isActive })
+
+		box.set(states: [.one, .two, .three])
+		box.updateConstraints()
 	}
 }

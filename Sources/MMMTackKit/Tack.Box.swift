@@ -21,31 +21,24 @@ extension Tack {
 	final public class Box<Statable: Hashable> {
 		
 		private var currentState: Set<Statable>
-		private var previousCurrentState: Set<Statable>?
+		private var activatedStates: Set<Statable> = []
 		
 		private var storage = [Statable: [NSLayoutConstraint]]()
 		
 		/// Create a new box, passing the current states.
 		///
-		/// - Parameter state: Set of states to start off with.
-		public init(state: Set<Statable>) {
-			currentState = state
+		/// - Parameter states: A set of states to start off with.
+		public init(states: Set<Statable> = []) {
+			currentState = states
 		}
-		
+
 		/// Create a new box, passing the current state.
 		///
 		/// - Parameter state: State to start off with.
-		public convenience init(state: Statable? = nil) {
-			
-			var current = Set<Statable>()
-			
-			if let state = state {
-				current.insert(state)
-			}
-			
-			self.init(state: current)
+		public convenience init(state: Statable) {
+			self.init(states: [state])
 		}
-		
+
 		/// Add constraints to the `Box` for a given state.
 		public func add(state: Statable, constraints: [NSLayoutConstraint]...) {
 			add(constraints: constraints.flatMap { $0 }, state: state)
@@ -69,14 +62,14 @@ extension Tack {
 		
 		private func add(constraints: [NSLayoutConstraint], state: Statable) {
 			
-			var allconstraints = constraints
+			var allConstraints = constraints
 			
-			if storage.keys.contains(state), let current = storage[state] {
+			if let current = storage[state] {
 				// Already have storage for this state, let's add the constraints.
-				allconstraints.append(contentsOf: current)
+				allConstraints.append(contentsOf: current)
 			}
 			
-			storage[state] = allconstraints
+			storage[state] = allConstraints
 			
 			if currentState.contains(state) {
 				// We're already presenting this state; let's make sure to activate the new
@@ -119,8 +112,6 @@ extension Tack {
 		/// - Throws: Throws a `stateNotFound` error if you try to activate a state that isn't added to the box.
 		public func set(states: Set<Statable>) {
 			
-			previousCurrentState = currentState
-			
 			states.forEach { state in
 				if !storage.keys.contains(state) {
 					assertionFailure("Trying to set current state to \(states) but it isn't added")
@@ -133,49 +124,23 @@ extension Tack {
 		/// Call this in your `UIView.updateConstraints()` method.
 		public func updateConstraints() {
 			
-			if let previous = previousCurrentState {
-				
-				// Let's deactivate the previous state, as long as the previous state doesn't
-				// contain the current state, we leave the current ones be.
-				previous
-					.filter { !currentState.contains($0) }
-					.forEach { current in
-						
-						guard let constraints = storage[current] else {
-							// Not asserting here, could be that a user removed the
-							// constraints for this state.
-							return
-						}
-						
-						Tack.deactivate(constraints)
-					}
-				
-				previousCurrentState = nil
-			}
-			
-			// Now just enable the new ones, but filter out states that we had already
-			// enabled beforehand.
-			
-			let states: Set<Statable> = {
-				
-				if let previous = previousCurrentState {
-					// If the previous state contains a state in the current set, we can
-					// ignore that.
-					return currentState.filter { !previous.contains($0) }
-				}
-				
-				return currentState
-			}()
-			
-			states.forEach { state in
+			// Let's deactivate constraints corresponding to the states that don't appear in the new set of states.
+			activatedStates.subtracting(currentState)
+				.compactMap { storage[$0] } // Could be that the user has removed constraints for those inactive states.
+				.forEach { Tack.deactivate($0) }
+
+			// And activate the ones corresponding to the new states skipping previously activated.
+			currentState.subtracting(activatedStates).forEach { state in
 			
 				guard let constraints = storage[state] else {
-					assertionFailure("State in currentState set but without storage, should be impossible?")
+					assertionFailure("No constraints for state \(state), is this intentional?")
 					return
 				}
 				
 				Tack.activate(constraints)
 			}
+
+			activatedStates = currentState
 		}
 	}
 }
