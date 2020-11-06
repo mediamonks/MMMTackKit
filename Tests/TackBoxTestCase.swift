@@ -148,4 +148,58 @@ class TackBoxTestCase: XCTestCase {
 		box.set(states: [.one, .two, .three])
 		box.updateConstraints()
 	}
+	
+	func testStateChanges() {
+		
+		let box = Tack.Box<State>(state: .one)
+		
+		let aConstraints = Tack.constraints(.H(|-20-viewA))
+		let bConstraints = Tack.constraints(.H(|-40-viewA))
+		let cConstraints = Tack.constraints(.H(|-60-viewA))
+		
+		box[.one] = aConstraints
+		box[.two] = bConstraints
+		box[.three] = cConstraints
+		
+		box.updateConstraints()
+		
+		XCTAssert(aConstraints.allSatisfy { $0.isActive })
+		XCTAssertFalse(bConstraints.allSatisfy { $0.isActive })
+		XCTAssertFalse(cConstraints.allSatisfy { $0.isActive })
+		
+		box.set(state: .two)
+		box.set(state: .three)
+		
+		box.updateConstraints()
+		
+		XCTAssertFalse(aConstraints.allSatisfy { $0.isActive })
+		XCTAssertFalse(bConstraints.allSatisfy { $0.isActive })
+		XCTAssert(cConstraints.allSatisfy { $0.isActive })
+		
+		box.set(state: .two)
+		box.updateConstraints()
+		
+		XCTAssertFalse(aConstraints.allSatisfy { $0.isActive })
+		XCTAssert(bConstraints.allSatisfy { $0.isActive })
+		XCTAssertFalse(cConstraints.allSatisfy { $0.isActive })
+		
+		box.set(state: .three)
+		box.set(state: .two)
+		box.set(state: .one)
+		box.set(state: .two)
+		
+		box.updateConstraints()
+		
+		XCTAssertFalse(aConstraints.allSatisfy { $0.isActive })
+		XCTAssert(bConstraints.allSatisfy { $0.isActive })
+		XCTAssertFalse(cConstraints.allSatisfy { $0.isActive })
+		
+		box.updateConstraints()
+		box.updateConstraints()
+		box.updateConstraints()
+		
+		XCTAssertFalse(aConstraints.allSatisfy { $0.isActive })
+		XCTAssert(bConstraints.allSatisfy { $0.isActive })
+		XCTAssertFalse(cConstraints.allSatisfy { $0.isActive })
+	}
 }

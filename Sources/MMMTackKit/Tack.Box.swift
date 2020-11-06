@@ -137,7 +137,9 @@ extension Tack {
 					return
 				}
 				
-				Tack.activate(constraints)
+				// Only activate constraints that aren't active yet; e.g. when adding the
+				// same constraints to multiple states, and activating multiple states.
+				Tack.activate(constraints.filter { !$0.isActive })
 			}
 
 			activatedStates = currentState
