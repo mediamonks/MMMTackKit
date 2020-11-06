@@ -13,32 +13,51 @@ extension Tack {
 	/// You should supply a `Hashable` as generic constraint, this usually ends up being an `enum State {}`, but
 	/// could be identifiers or something similar.
 	///
-	/// Start by adding constraints for a certain state, after that you can safely call `.set(state:)` to update the active
+	/// Start by adding constraints for a certain state, after that you can safely set `.activeState` to update the active
 	/// state. Make sure to call `setNeedsUpdateConstraints()` after you set a new state.
 	///
 	/// Finally you should override your `updateConstraints()` method, and call `Box.updateConstraints()`
 	/// to actually activate/deactive the constraints.
 	final public class Box<Statable: Hashable> {
 		
-		private var currentState: Set<Statable>
+		private var storage = [Statable: [NSLayoutConstraint]]()
 		private var activatedStates: Set<Statable> = []
 		
-		private var storage = [Statable: [NSLayoutConstraint]]()
-		
-		/// Create a new box, passing the current states.
+		/// Create a new box, passing the active states.
 		///
 		/// - Parameter states: A set of states to start off with.
-		public init(states: Set<Statable> = []) {
-			currentState = states
+		public init(activeStates: Set<Statable> = []) {
+			self.activeStates = activeStates
 		}
 
-		/// Create a new box, passing the current state.
+		/// Create a new box, passing a active state.
 		///
 		/// - Parameter state: State to start off with.
-		public convenience init(state: Statable) {
-			self.init(states: [state])
+		public convenience init(activeState: Statable) {
+			self.init(activeStates: [activeState])
 		}
 
+		/// Set the active state. Please note you'll have to call `setNeedsUpdateConstraints()` after this.
+		public var activeState: Statable? {
+			set {
+				activeStates = newValue.map { [$0] } ?? []
+			}
+			get {
+				return activeStates.first
+			}
+		}
+		
+		/// Set the active states. Please note you'll have to call `setNeedsUpdateConstraints()` after this.
+		public var activeStates: Set<Statable> {
+			didSet {
+				activeStates.forEach { state in
+					if !storage.keys.contains(state) {
+						assertionFailure("Trying to set current state to \(state) but it isn't added")
+					}
+				}
+			}
+		}
+		
 		/// Add constraints to the `Box` for a given state.
 		public func add(state: Statable, constraints: [NSLayoutConstraint]...) {
 			add(constraints: constraints.flatMap { $0 }, state: state)
@@ -71,7 +90,7 @@ extension Tack {
 			
 			storage[state] = allConstraints
 			
-			if currentState.contains(state) {
+			if activeStates.contains(state) {
 				// We're already presenting this state; let's make sure to activate the new
 				// constraints right away.
 				Tack.activate(constraints)
@@ -87,7 +106,7 @@ extension Tack {
 		@discardableResult
 		public func remove(state: Statable) -> [NSLayoutConstraint] {
 			
-			guard !currentState.contains(state) else {
+			guard !activeStates.contains(state) else {
 				assertionFailure("Removing a state \(state) that's currently active")
 				return []
 			}
@@ -100,37 +119,16 @@ extension Tack {
 			return constraints
 		}
 		
-		/// Set the current state. Please note you'll have to call `setNeedsUpdateConstraints()` after this.
-		/// - Parameter state: The state to activate.
-		/// - Throws: Throws a `stateNotFound` error if you try to activate a state that isn't added to the box.
-		public func set(state: Statable) {
-			set(states: [state])
-		}
-		
-		/// Set the current states. Please note you'll have to call `setNeedsUpdateConstraints()` after this.
-		/// - Parameter state: The states to activate.
-		/// - Throws: Throws a `stateNotFound` error if you try to activate a state that isn't added to the box.
-		public func set(states: Set<Statable>) {
-			
-			states.forEach { state in
-				if !storage.keys.contains(state) {
-					assertionFailure("Trying to set current state to \(states) but it isn't added")
-				}
-			}
-			
-			currentState = states
-		}
-		
 		/// Call this in your `UIView.updateConstraints()` method.
 		public func updateConstraints() {
 			
 			// Let's deactivate constraints corresponding to the states that don't appear in the new set of states.
-			activatedStates.subtracting(currentState)
+			activatedStates.subtracting(activeStates)
 				.compactMap { storage[$0] } // Could be that the user has removed constraints for those inactive states.
 				.forEach { Tack.deactivate($0) }
 
 			// And activate the ones corresponding to the new states skipping previously activated.
-			currentState.subtracting(activatedStates).forEach { state in
+			activeStates.subtracting(activatedStates).forEach { state in
 			
 				guard let constraints = storage[state] else {
 					assertionFailure("No constraints for state \(state), is this intentional?")
@@ -142,7 +140,7 @@ extension Tack {
 				Tack.activate(constraints.filter { !$0.isActive })
 			}
 
-			activatedStates = currentState
+			activatedStates = activeStates
 		}
 	}
 }
