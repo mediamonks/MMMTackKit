@@ -5,7 +5,8 @@
 
 import UIKit
 
-// TODO: syntax for equal height/width?
+// TODO: syntax for height to width constraints
+// TODO: support layout guides everywhere
 
 // To allow using `>=padding` instead of `.ge(padding)` (and same for `==padding` for symmetry).
 
@@ -14,7 +15,7 @@ prefix operator >==
 prefix operator ==
 
 public prefix func >= (padding: CGFloat) -> _Tack.Padding {
-	return ._greaterThanOrEqual(padding, .required)
+	return .greaterThanOrEqual(padding, .required)
 }
 
 /// A "double pin", that is `>==padding^priority` is the same as `">=padding,==padding@priority"` in VFL.
@@ -22,30 +23,29 @@ public prefix func >= (padding: CGFloat) -> _Tack.Padding {
 ///
 /// The behavior of a double pin is what beginners often expect from a regular `>=padding` constraint.
 public prefix func >== (padding: CGFloat) -> _Tack.Padding {
-	return ._doublePin(padding, .defaultLow - 1)
+	return .doublePin(padding, .defaultLow - 1)
 }
 
 public prefix func == (padding: CGFloat) -> _Tack.Padding {
-	return ._equal(padding, .required)
+	return .equal(padding, .required)
 }
 
 // For something close to `padding@249` (cannot use @ as operator).
-// TODO: not sure we are really interested in this.
 
-/// Analogue of `@` in VFL, i.e. using `padding^249` is the same as using `"padding@249"` in VFL.
+/// Analogue of `@` in VFL, i.e. `padding^249` is the same as using `"padding@249"` in VFL.
 public func ^(padding: CGFloat, priority: CGFloat) -> _Tack.Padding {
-	return ._equal(padding, UILayoutPriority(Float(priority)))
+	return .equal(padding, UILayoutPriority(Float(priority)))
 }
 
-/// Analogue of `@` in VFL, i.e. using `padding^249` is the same as using `"padding@249"` in VFL.
+/// Analogue of `@` in VFL, i.e. `padding^249` is the same as using `"padding@249"` in VFL.
 public func ^(padding: _Tack.Padding, priority: CGFloat) -> _Tack.Padding {
 	switch padding {
-	case let ._equal(padding, _):
-		return ._equal(padding, UILayoutPriority(Float(priority)))
-	case let ._greaterThanOrEqual(padding, _):
-		return ._greaterThanOrEqual(padding, UILayoutPriority(Float(priority)))
-	case let ._doublePin(padding, _):
-		return ._doublePin(padding, UILayoutPriority(Float(priority)))
+	case let .equal(padding, _):
+		return .equal(padding, UILayoutPriority(Float(priority)))
+	case let .greaterThanOrEqual(padding, _):
+		return .greaterThanOrEqual(padding, UILayoutPriority(Float(priority)))
+	case let .doublePin(padding, _):
+		return .doublePin(padding, UILayoutPriority(Float(priority)))
 	}
 }
 
@@ -57,7 +57,7 @@ postfix operator -|
 // |-(padding)-[view]
 
 public prefix func |- (padding: CGFloat) -> _Tack.SuperviewPadding {
-	return .init(padding: ._equal(padding, .required))
+	return .init(padding: .equal(padding, .required))
 }
 
 public prefix func |- (padding: _Tack.Padding) -> _Tack.SuperviewPadding {
@@ -82,7 +82,7 @@ public func - (view: UIView, rhs: _Tack.Padding) -> _Tack.ViewPadding {
 }
 
 public func - (view: UIView, rhs: CGFloat) -> _Tack.ViewPadding {
-	return .init(view: view, padding: ._equal(rhs, .required))
+	return .init(view: view, padding: .equal(rhs, .required))
 }
 
 public func - (lhs: _Tack.ViewPadding, view: UIView) -> Tack.Chain {
@@ -101,7 +101,7 @@ public func - (chain: Tack.Chain, padding: _Tack.Padding) -> _Tack.ChainPadding 
 }
 
 public func - (chain: Tack.Chain, rhs: CGFloat) -> _Tack.ChainPadding {
-	return .init(chain: chain, padding: ._equal(rhs, .required))
+	return .init(chain: chain, padding: .equal(rhs, .required))
 }
 
 public func - (lhs: _Tack.ChainPadding, view: UIView) -> Tack.Chain {
@@ -122,7 +122,7 @@ public postfix func -| (padding: _Tack.Padding) -> _Tack.PaddingSuperview {
 }
 
 public postfix func -| (padding: CGFloat) -> _Tack.PaddingSuperview {
-	return .init(padding: ._equal(padding, .required))
+	return .init(padding: .equal(padding, .required))
 }
 
 public func - (view: UIView, rhs: _Tack.PaddingSuperview) -> Tack.Chain {
@@ -152,7 +152,7 @@ public func - (chain: Tack.Chain, rhs: _Tack.PaddingSuperview) -> Tack.Chain {
 postfix operator -<|
 
 public postfix func -<| (padding: CGFloat) -> _Tack.PaddingSuperviewSafeArea {
-	return .init(padding: ._equal(padding, .required))
+	return .init(padding: .equal(padding, .required))
 }
 
 public postfix func -<| (padding: _Tack.Padding) -> _Tack.PaddingSuperviewSafeArea {
@@ -184,7 +184,7 @@ public func - (chain: Tack.Chain, rhs: _Tack.PaddingSuperviewSafeArea) -> Tack.C
 prefix operator |>-
 
 public prefix func |>- (padding: CGFloat) -> _Tack.PaddingSuperviewSafeArea {
-	return .init(padding: ._equal(padding, .required))
+	return .init(padding: .equal(padding, .required))
 }
 
 public prefix func |>- (padding: _Tack.Padding) -> _Tack.PaddingSuperviewSafeArea {
@@ -305,11 +305,11 @@ public enum Tack {
 				let rhs = pair.rhs.resolved(axis: axis)
 
 				switch pair.padding {
-				case let ._equal(value, prio):
+				case let .equal(value, prio):
 					result.append(constraint(lhs, rhs, (.equal, value, prio)))
-				case let ._greaterThanOrEqual(value, prio):
+				case let .greaterThanOrEqual(value, prio):
 					result.append(constraint(lhs, rhs, (.greaterThanOrEqual, value, prio)))
-				case let ._doublePin(value, prio):
+				case let .doublePin(value, prio):
 					result.append(constraint(lhs, rhs, (.greaterThanOrEqual, value, .required)))
 					result.append(constraint(lhs, rhs, (.equal, value, prio)))
 				}
@@ -341,18 +341,18 @@ public enum Tack {
 			return result
 		}
 	}
-
 }
 
+/// The types here are only to glue the views and paddings via our operators, they should not be used explicitly.
 public enum _Tack {
 
 	internal typealias ResolvedPadding = (NSLayoutConstraint.Relation, CGFloat, UILayoutPriority)
 
-	// TODO: can be a struct eventually, storing already "resolved" array
+	// TODO: eventually can be a struct storing already "resolved" array
 	public enum Padding {
-		case _equal(CGFloat, UILayoutPriority)
-		case _greaterThanOrEqual(CGFloat, UILayoutPriority)
-		case _doublePin(CGFloat, UILayoutPriority)
+		case equal(CGFloat, UILayoutPriority)
+		case greaterThanOrEqual(CGFloat, UILayoutPriority)
+		case doublePin(CGFloat, UILayoutPriority)
 	}
 
 	public struct SuperviewPadding {
