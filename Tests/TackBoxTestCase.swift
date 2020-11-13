@@ -3,203 +3,87 @@
 // Copyright (C) 2015-2020 MediaMonks. All rights reserved.
 //
 
-@testable import MMMTackKit
-import UIKit
+import MMMTackKit
 import XCTest
 
-class TackBoxTestCase: XCTestCase {
-
-	enum State {
-		case one, two, three
-	}
-
-	private var container: UIView!
-	private var viewA: UIView!
-	private var viewB: UIView!
-	private var viewC: UIView!
-
-	override func setUp() {
-
-		super.setUp()
-
-		container = UIView()
-
-		viewA = UIView()
-		container.addSubview(viewA)
-
-		viewB = UIView()
-		container.addSubview(viewB)
-
-		viewC = UIView()
-		container.addSubview(viewC)
-	}
+class TackBoxTestCase: BaseTestCase {
 
 	func testBasics() {
-		
-		let box = Tack.Box<State>()
-		
-		let oneConstraints = Tack.constraints(.H(|-20-viewA))
-		let twoConstraints = Tack.constraints(.H(|-40-viewA))
-		let threeConstraints = Tack.constraints(.H(|-60-viewA))
-		
-		box[.one] = oneConstraints
-		box[.two] = twoConstraints
-		box[.three] = threeConstraints
-		
-		box.activeState = .one
-		box.updateConstraints()
-		
-		XCTAssert(oneConstraints.allSatisfy { $0.isActive })
-		XCTAssertFalse(twoConstraints.allSatisfy { $0.isActive })
-		XCTAssertFalse(threeConstraints.allSatisfy { $0.isActive })
-		
-		// Without calling updateConstraints no (de)activation should occur.
-		box.activeState = .two
-		
-		XCTAssert(oneConstraints.allSatisfy { $0.isActive })
-		XCTAssertFalse(twoConstraints.allSatisfy { $0.isActive })
-		
-		box.updateConstraints()
-		
-		XCTAssertFalse(oneConstraints.allSatisfy { $0.isActive })
-		XCTAssert(twoConstraints.allSatisfy { $0.isActive })
-		
-		box.activeStates = [.three, .one]
-		box.updateConstraints()
-		
-		XCTAssert(oneConstraints.allSatisfy { $0.isActive })
-		XCTAssertFalse(twoConstraints.allSatisfy { $0.isActive })
-		XCTAssert(threeConstraints.allSatisfy { $0.isActive })
-		
-		box.activeState = .one
-		box.updateConstraints()
-		
-		XCTAssert(oneConstraints.allSatisfy { $0.isActive })
-		XCTAssertFalse(twoConstraints.allSatisfy { $0.isActive })
-		XCTAssertFalse(threeConstraints.allSatisfy { $0.isActive })
-		
-		box.activeState = .two
-		box.updateConstraints()
-		
-		XCTAssertFalse(oneConstraints.allSatisfy { $0.isActive })
-		XCTAssert(twoConstraints.allSatisfy { $0.isActive })
-		XCTAssertFalse(threeConstraints.allSatisfy { $0.isActive })
-	}
-	
-	func testMultiple() {
-		
-		let box = Tack.Box<State>(activeState: .one)
-		
-		let aConstraints = Tack.constraints(.H(|-20-viewA))
-		let bConstraints = Tack.constraints(.H(|-40-viewA))
-		let cConstraints = Tack.constraints(.H(|-60-viewA))
-		
-		box[.one] = aConstraints
-		box[.two] = bConstraints
-		box[.three] = cConstraints
-		
-		box.updateConstraints()
-		
-		XCTAssert(aConstraints.allSatisfy { $0.isActive })
-		XCTAssertFalse(bConstraints.allSatisfy { $0.isActive })
-		XCTAssertFalse(cConstraints.allSatisfy { $0.isActive })
-		
-		box[.one] = bConstraints
-		
-		XCTAssert(aConstraints.allSatisfy { $0.isActive })
-		XCTAssert(bConstraints.allSatisfy { $0.isActive })
-		XCTAssertFalse(cConstraints.allSatisfy { $0.isActive })
-		
-		box.activeState = .two
-		box.updateConstraints()
-		
-		XCTAssertFalse(aConstraints.allSatisfy { $0.isActive })
-		XCTAssert(bConstraints.allSatisfy { $0.isActive })
-		XCTAssertFalse(cConstraints.allSatisfy { $0.isActive })
-		
-		box.remove(state: .three)
-		box.remove(state: .one)
-		
-		box.add(states: [.one, .three], constraints: aConstraints)
-		
-		box.activeState = .one
-		box.updateConstraints()
-		
-		XCTAssert(aConstraints.allSatisfy { $0.isActive })
-		XCTAssertFalse(bConstraints.allSatisfy { $0.isActive })
-		XCTAssertFalse(cConstraints.allSatisfy { $0.isActive })
-		
-		box.add(states: [.two, .three], constraints: cConstraints, bConstraints)
-		
-		box.activeState = .three
-		box.updateConstraints()
-		
-		XCTAssert(aConstraints.allSatisfy { $0.isActive })
-		XCTAssert(bConstraints.allSatisfy { $0.isActive })
-		XCTAssert(cConstraints.allSatisfy { $0.isActive })
-		
-		box.activeState = .two
-		box.updateConstraints()
-		
-		XCTAssertFalse(aConstraints.allSatisfy { $0.isActive })
-		XCTAssert(bConstraints.allSatisfy { $0.isActive })
-		XCTAssert(cConstraints.allSatisfy { $0.isActive })
 
-		box.activeStates = [.one, .two, .three]
-		box.updateConstraints()
-	}
-	
-	func testStateChanges() {
-		
-		let box = Tack.Box<State>(activeState: .one)
-		
-		let aConstraints = Tack.constraints(.H(|-20-viewA))
-		let bConstraints = Tack.constraints(.H(|-40-viewA))
-		let cConstraints = Tack.constraints(.H(|-60-viewA))
-		
-		box[.one] = aConstraints
-		box[.two] = bConstraints
-		box[.three] = cConstraints
-		
-		box.updateConstraints()
-		
-		XCTAssert(aConstraints.allSatisfy { $0.isActive })
-		XCTAssertFalse(bConstraints.allSatisfy { $0.isActive })
-		XCTAssertFalse(cConstraints.allSatisfy { $0.isActive })
-		
-		box.activeState = .two
-		box.activeState = .three
-		
-		box.updateConstraints()
-		
-		XCTAssertFalse(aConstraints.allSatisfy { $0.isActive })
-		XCTAssertFalse(bConstraints.allSatisfy { $0.isActive })
-		XCTAssert(cConstraints.allSatisfy { $0.isActive })
-		
-		box.activeState = .two
-		box.updateConstraints()
-		
-		XCTAssertFalse(aConstraints.allSatisfy { $0.isActive })
-		XCTAssert(bConstraints.allSatisfy { $0.isActive })
-		XCTAssertFalse(cConstraints.allSatisfy { $0.isActive })
-		
-		box.activeState = .three
-		box.activeState = .two
-		box.activeState = .one
-		box.activeState = .two
-		
-		box.updateConstraints()
-		
-		XCTAssertFalse(aConstraints.allSatisfy { $0.isActive })
-		XCTAssert(bConstraints.allSatisfy { $0.isActive })
-		XCTAssertFalse(cConstraints.allSatisfy { $0.isActive })
-		
-		box.updateConstraints()
-		box.updateConstraints()
-		box.updateConstraints()
-		
-		XCTAssertFalse(aConstraints.allSatisfy { $0.isActive })
-		XCTAssert(bConstraints.allSatisfy { $0.isActive })
-		XCTAssertFalse(cConstraints.allSatisfy { $0.isActive })
+		// The box is declared as a var in a view (or in a controller if you happen to do layout there).
+		let tackBox = Tack.Box()
+
+		// The view (or controller) maintains states/flags/styles affecting the layout.
+		// The exact form this state info is maintained in is up to the view. Let's have a simple flag for now.
+		var shouldDisplayViewB = false
+
+		// And then the usual updateContraints() is overriden:
+		func updateConstraints() {
+
+			// (With `super.updateConstraints()` of course.)
+
+			// We're getting access to the box first.
+			// This ensures that previous dynamic constraints will be deactivated (something that's forgotten sometimes)
+			// and the new ones will be activated at once before leaving updateConstraints().
+			let box = tackBox.open()
+
+			// Some of the constraints exist in all the states.
+			// (The code creating constraints won't execute the second time, it's an autoclosure here.)
+			box.activateOnce(Tack.constraints(
+				.H(|-(padding)-viewA)
+			))
+
+			// And some depend on flags/states/styles:
+			if !shouldDisplayViewB {
+				box.activate(Tack.H(viewA-(padding)-|))
+			} else {
+				box.activate(Tack.H(viewA-(padding)-viewB-(padding)-|))
+			}
+
+			// Permanent constraints don't have to be set in a single go either, they are accumulated
+			// just like the dynamic ones, so things can be grouped.
+			box.activateOnce(Tack.V(|-(padding)-viewA-(padding)-|))
+
+			if shouldDisplayViewB {
+				box.activate(Tack.V(|-(padding)-viewB-(padding)-|))
+			}
+		}
+
+		shouldDisplayViewB = true
+		updateConstraints()
+		assertEqualConstraints(
+			container.constraints,
+			Tack.constraints(
+				.H(|-(padding)-viewA-(padding)-viewB-(padding)-|),
+				.V(|-(padding)-viewA-(padding)-|),
+				.V(|-(padding)-viewB-(padding)-|)
+			)
+		)
+
+		shouldDisplayViewB = false
+		updateConstraints()
+		assertEqualConstraints(
+			container.constraints,
+			Tack.constraints(
+				.H(|-(padding)-viewA-(padding)-|),
+				.V(|-(padding)-viewA-(padding)-|)
+			)
+		)
+
+		// Btw, it should be safe to close the box manually.
+		do {
+			let box = tackBox.open()
+			box.close()
+			// And more than once or when goes out of scope.
+			box.close()
+		}
+		// However opening/closing it will keep only permanent constraints as we have not installed dynamic ones.
+		assertEqualConstraints(
+			container.constraints,
+			Tack.constraints(
+				.H(|-(padding)-viewA),
+				.V(|-(padding)-viewA-(padding)-|)
+			)
+		)
 	}
 }

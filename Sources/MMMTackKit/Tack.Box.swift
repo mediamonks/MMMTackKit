@@ -6,141 +6,145 @@
 import UIKit
 
 extension Tack {
-	
-	/// The `Box` can be used to orchestrate a set of constraints, e.g. between state changes. The main goal is to avoid
-	/// unneccessary, and complex / error prone, if/else chains in `UIView.updateConstraints()`.
+
+	/// Simplifies management of permanent vs dynamic constraints in `updateContraints()`.
 	///
-	/// You should supply a `Hashable` as generic constraint, this usually ends up being an `enum State {}`, but
-	/// could be identifiers or something similar.
+	/// This is another take on the `Box` concept following the older `updateContraints()` pattern we used.
+	/// We are evaluating both of them as one or another might feel more natural depending on the use case.
 	///
-	/// Start by adding constraints for a certain state, after that you can safely set `.activeState` to update the active
-	/// state. Make sure to call `setNeedsUpdateConstraints()` after you set a new state.
+	/// # Usage:
 	///
-	/// Finally you should override your `updateConstraints()` method, and call `Box.updateConstraints()`
-	/// to actually activate/deactive the constraints.
-	final public class Box<Statable: Hashable> {
-		
-		private var storage = [Statable: [NSLayoutConstraint]]()
-		private var activatedStates: Set<Statable> = []
-		
-		/// Create a new box, passing the active states.
+	/// - Add a variable in your view:
+	///
+	/// ```
+	/// private let tackBox = Tack.Box()`
+	/// ```
+	///
+	/// - Get access to the box first ("open" it) in your `updateConstraints()`.
+	/// This ensures that previous dynamic constraints will be deactivated (something that's forgotten sometimes)
+	/// and the new ones will be activated at once just before leaving `updateConstraints()`.
+	///
+	/// ```
+	/// func updateConstraints() {
+	///     super.updateConstraints()
+	///     let box = tackBox.open()
+	///     // ...
+	/// ```
+	///
+	/// - Start adding permanent constraints, i.e. the ones that don't depend on the dynamic state/style
+	/// of your view and thus can be created and activated just once.
+	///
+	/// ```
+	/// box.activateOnce(Tack.constraints(
+	///     .H(|-(padding)-viewA)
+	/// ))
+	/// ```
+	///
+	/// Note that the code creating them will be executed only the first time `updateConstraints()` is called.
+	/// Also note that you can have multiple calls of `activateOnce()`, they all will have effect the first time.
+	///
+	/// - Add dynamic constraints that might change every time `updateConstraints()` is called:
+	///
+	/// ```
+	/// if !shouldDisplayViewB {
+	///     box.activate(Tack.H(viewA-(padding)-|))
+	/// } else {
+	///     box.activate(Tack.H(viewA-(padding)-viewB-(padding)-|))
+	/// }
+	/// ```
+	///
+	/// The dynamic constraints will be activated at once when the `box` accessor goes out of scope.
+	///
+	/// Note that the calls to `activateOnce()` and `activate()` calls can be freely intermixed.
+	public final class Box {
+
+		public init() {}
+
+		private var fillingFirstTime: Bool = true
+
+		/// The dynamic ones, added via `activate` of the accessor.
+		private var constraints: [NSLayoutConstraint] = []
+
+		/// The current acessor, only for diagnostics.
+		private weak var openBox: OpenBox?
+
+		/// Returns the accessor object through which the constraints should be added and which ensures they
+		/// are activated when it goes out of scope.
 		///
-		/// - Parameter states: A set of states to start off with.
-		public init(activeStates: Set<Statable> = []) {
-			self.activeStates = activeStates
+		/// There must be only one accessor at a time, thus never hold the returned values longer than
+		/// your `updateConstraints()` call.
+		public func open() -> OpenBox {
+
+			assert(openBox?.closed ?? true, "Did you forget to close the box before?")
+
+			let r = OpenBox(box: self)
+			openBox = r
+
+			// Could do this just before the activation of the new constraints collected when the box was open,
+			// but doing this here makes it more clear for the user.
+			NSLayoutConstraint.deactivate(constraints)
+			constraints = []
+
+			return r
 		}
 
-		/// Create a new box, passing a active state.
-		///
-		/// - Parameter state: State to start off with.
-		public convenience init(activeState: Statable) {
-			self.init(activeStates: [activeState])
-		}
+		/// Allows to safely add permanent or dynamic constraints into a box.
+		public final class OpenBox {
 
-		/// Set the active state. Please note you'll have to call `setNeedsUpdateConstraints()` after this.
-		public var activeState: Statable? {
-			set {
-				activeStates = newValue.map { [$0] } ?? []
-			}
-			get {
-				return activeStates.first
-			}
-		}
-		
-		/// Set the active states. Please note you'll have to call `setNeedsUpdateConstraints()` after this.
-		public var activeStates: Set<Statable> {
-			didSet {
-				activeStates.forEach { state in
-					if !storage.keys.contains(state) {
-						assertionFailure("Trying to set current state to \(state) but it isn't added")
-					}
-				}
-			}
-		}
-		
-		/// Add constraints to the `Box` for a given state.
-		public func add(state: Statable, constraints: [NSLayoutConstraint]...) {
-			add(constraints: constraints.flatMap { $0 }, state: state)
-		}
-		
-		public subscript(states: Statable...) -> [NSLayoutConstraint] {
-			set {
-				add(states: Set<Statable>.init(states), constraints: newValue)
-			}
-			get {
-				return states.compactMap { storage[$0] }.flatMap { $0 }
-			}
-		}
-		
-		/// Add constraints to the `Box` for a given set of states.
-		public func add(states: Set<Statable>, constraints: [NSLayoutConstraint]...) {
-			states.forEach { state in
-				add(constraints: constraints.flatMap { $0 }, state: state)
-			}
-		}
-		
-		private func add(constraints: [NSLayoutConstraint], state: Statable) {
-			
-			var allConstraints = constraints
-			
-			if let current = storage[state] {
-				// Already have storage for this state, let's add the constraints.
-				allConstraints.append(contentsOf: current)
-			}
-			
-			storage[state] = allConstraints
-			
-			if activeStates.contains(state) {
-				// We're already presenting this state; let's make sure to activate the new
-				// constraints right away.
-				Tack.activate(constraints)
-			}
-		}
-		
-		/// Remove all constraints from the box for a given state.
-		///
-		/// - Parameter state: The state to remove the constraints for.
-		/// - Throws: Throws a `stateNotFound` error if you try to remove a state that isn't added to the box, and
-		/// throws `stateActive` if you try to remove constraints while currently in this state.
-		/// - Returns: The constraints known in the box for this state.
-		@discardableResult
-		public func remove(state: Statable) -> [NSLayoutConstraint] {
-			
-			guard !activeStates.contains(state) else {
-				assertionFailure("Removing a state \(state) that's currently active")
-				return []
-			}
-			
-			guard let constraints = storage.removeValue(forKey: state) else {
-				assertionFailure("Removing a state \(state) that isn't added")
-				return []
-			}
-			
-			return constraints
-		}
-		
-		/// Call this in your `UIView.updateConstraints()` method.
-		public func updateConstraints() {
-			
-			// Let's deactivate constraints corresponding to the states that don't appear in the new set of states.
-			activatedStates.subtracting(activeStates)
-				.compactMap { storage[$0] } // Could be that the user has removed constraints for those inactive states.
-				.forEach { Tack.deactivate($0) }
+			private let box: Box
 
-			// And activate the ones corresponding to the new states skipping previously activated.
-			activeStates.subtracting(activatedStates).forEach { state in
-			
-				guard let constraints = storage[state] else {
-					assertionFailure("No constraints for state \(state), is this intentional?")
+			public init(box: Box) {
+				self.box = box
+			}
+
+			deinit {
+				close()
+			}
+
+			/// Activates the given constraints only the first time the box is filled in.
+			/// (Uses an autoclosure to skip creation of your constraints when accessed later.)
+			///
+			/// Can be called multiple times and mixed with regular activate() calls.
+			///
+			/// Note that the user code could use `.once { Tack.activate(...` instead,
+			/// but having this as a pair for `activate()` could make the code look consistent.
+			public func activateOnce(_ constraints: @autoclosure () -> [NSLayoutConstraint]) {
+
+				guard box.fillingFirstTime else {
+					// Already set, skip calling the closure.
+					// Note that we could still call it in Debug only to check that the constraints are still the same,
+					// i.e. the user code is not misusing the API.
 					return
 				}
-				
-				// Only activate constraints that aren't active yet; e.g. when adding the
-				// same constraints to multiple states, and activating multiple states.
-				Tack.activate(constraints.filter { !$0.isActive })
+
+				// Could do this later, when the box is closed, but there would not be any benefits it seems.
+				NSLayoutConstraint.activate(constraints())
 			}
 
-			activatedStates = activeStates
+			/// Activates the given constraints and adds them into the box to automatically deactivate
+			/// the next time the box is opened.
+			///
+			/// (No overload accepting OrientedChain here to keep it consistent with activateOnce() where we cannot
+			/// add an overload to keep using autoclosure.)
+			public func activate(_ constraints: [NSLayoutConstraint]) {
+				// Again, we could activate them all at once when the box is closed,
+				// but it seems like this has no benefits and might cause confusion when debugging.
+				NSLayoutConstraint.activate(constraints)
+				box.constraints.append(contentsOf: constraints)
+			}
+
+			fileprivate var closed: Bool = false
+
+			public func close() {
+
+				// Should be safe to call multiple times.
+				guard !closed else { return }
+
+				closed = true
+
+				// Sealing it for permanent constraints.
+				box.fillingFirstTime = false
+			}
 		}
 	}
 }
