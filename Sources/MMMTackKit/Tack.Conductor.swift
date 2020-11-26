@@ -65,7 +65,7 @@ extension Tack {
 		
 		public subscript(states: Statable...) -> [NSLayoutConstraint] {
 			set {
-				add(states: Set<Statable>.init(states), constraints: newValue)
+				add(states: Set<Statable>(states), constraints: newValue)
 			}
 			get {
 				return states.compactMap { storage[$0] }.flatMap { $0 }
@@ -93,7 +93,7 @@ extension Tack {
 			if activeStates.contains(state) {
 				// We're already presenting this state; let's make sure to activate the new
 				// constraints right away.
-				Tack.activate(constraints)
+				Tack.activate(constraints.filter { !$0.isActive })
 			}
 		}
 		
