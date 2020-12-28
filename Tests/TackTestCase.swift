@@ -18,6 +18,10 @@ class TackTestCase: BaseTestCase {
 					withVisualFormat: "H:|-(>=padding)-[viewA]-(padding)-[viewB]",
 					options: [], metrics: metrics, views: views
 				)
+				let _ = NSLayoutConstraint.constraints(
+					withVisualFormat: "H:|-(>=padding)-[guideA]-(padding)-[guideB]",
+					options: [], metrics: metrics, views: views
+				)
 			}
 		}
 	}
@@ -26,12 +30,15 @@ class TackTestCase: BaseTestCase {
 		self.measure {
 			for _ in 1...iterations {
 				let _ = Tack.H(|-(>=padding)-viewA-(padding)-viewB)
+				let _ = Tack.H(|-(>=padding)-guideA-(padding)-guideB)
 			}
 		}
 	}
 
 	// Not really a test, just to check if different combinations compile.
 	func testBuilding() {
+
+		// Views:
 
 		print(Tack.H(|-(==padding)-viewA))
 		print(Tack.H(|-(padding)-viewA))
@@ -44,6 +51,25 @@ class TackTestCase: BaseTestCase {
 
 		print(Tack.H(viewB-(padding)-|))
 		print(Tack.H(viewB-padding-|))
+
+		// Guides:
+
+		print(Tack.H(|-(==padding)-guideA))
+		print(Tack.H(|-(padding)-guideA))
+		print(Tack.H(|-padding-guideA))
+
+		print(Tack.H(|-(>=padding)-guideA))
+
+		print(Tack.H(guideA-(padding)-guideB))
+		print(Tack.H(guideA-padding-guideB))
+		print(Tack.H(viewA-(padding)-guideB))
+		print(Tack.H(viewA-padding-guideB))
+		print(Tack.H(guideA-(padding)-viewB))
+		print(Tack.H(guideA-padding-viewB))
+
+		print(Tack.H(guideB-(padding)-|))
+		print(Tack.H(guideB-padding-|))
+
 	}
 
 	func testPostfixSafeArea() {

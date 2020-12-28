@@ -13,6 +13,10 @@ class BaseTestCase: XCTestCase {
 	internal var viewB: UIView!
 	internal var viewC: UIView!
 
+	internal var guideA: UILayoutGuide!
+	internal var guideB: UILayoutGuide!
+	internal var guideC: UILayoutGuide!
+
 	internal var views: [String: UIView]!
 	internal var metrics: [String: CGFloat]!
 	internal let padding: CGFloat = 10
@@ -32,7 +36,17 @@ class BaseTestCase: XCTestCase {
 		viewC = UIView()
 		container.addSubview(viewC)
 
-		views = [ "viewA": viewA, "viewB": viewB, "viewC": viewC ]
+		guideA = UILayoutGuide()
+		container.addLayoutGuide(guideA)
+		guideB = UILayoutGuide()
+		container.addLayoutGuide(guideB)
+		guideC = UILayoutGuide()
+		container.addLayoutGuide(guideC)
+
+		views = [
+			"viewA": viewA, "viewB": viewB, "viewC": viewC,
+			"guideA": viewA, "guideB": viewB, "guideC": viewC
+		]
 		metrics = [ "padding": padding ]
 	}
 

@@ -5,111 +5,64 @@
 
 import UIKit
 
-// Deprecated methods, should be removed in the future / next minor release. Keeping them
-// on top so it's not overseen.
-extension Tack {
-	
-	@available(*, deprecated, renamed: "constraints(aligning:to:horizontally:vertically:insets:)")
-	public static func constraintsAligning(
-		view: UIView,
-		to parent: UIView,
-		horizontally: HorizontalAlignmentPolicy = .none,
-		vertically: VerticalAlignmentPolicy = .none,
-		insets: UIEdgeInsets = .zero
-	) -> [NSLayoutConstraint] {
-		return constraints(aligning: view, to: parent, horizontally: horizontally, vertically: vertically, insets: insets)
-	}
-	
-	@available(*, deprecated, renamed: "constraints(aligning:to:horizontally:vertically:insets:)")
-	public static func constraintsAligning(
-		view: UIView,
-		to parent: UILayoutGuide,
-		horizontally: HorizontalAlignmentPolicy = .none,
-		vertically: VerticalAlignmentPolicy = .none,
-		insets: UIEdgeInsets = .zero
-	) -> [NSLayoutConstraint] {
-		return constraints(aligning: view, to: parent, horizontally: horizontally, vertically: vertically, insets: insets)
-	}
-}
-
 extension Tack {
 
-	/// Align a view to another view / parent (receiver), using a horizontal and vertical alignment policy. The insets will be
-	/// applied accordingly. E.g. horizontal alignment `.fill` with insets `(10, 10, 10, 10)` will keep
-	/// 10pts 'spacing' around the aligned view. When insets are applied to a `center` alignment, we will offset the
-	/// center alignment by the half of `left - right`; e.g. `insets(0, 20, 0, 5) = 7.5px` from center.
+	/// Aligns a view (or a layout guide) relative to another view (or layout guide) using a few simple
+	/// alignment policies like "center" or "fill".
+	///
+	/// Note that the view/guide being aligned does not have to be a child of the target view.
+	///
+	/// The insets are treated as if they were applied to the bounds of the target container first.
+	///
+	/// For example, with insets being `(20, 0, 10, 0)`:
+	///
+	/// 1) a horizontal `.fill` alignment policy  will keep the expected 20pt padding on the left and 10pt
+	///    on the right of the view being aligned;
+	///
+	/// 2) and a horizontal `.center` alignment policy (in addition to not being allowed to be closer than 20/10pt
+	///    to the sides of the container) will cause the center of the view being aligned to be shifted by 15pt
+	///    (`insets.left - insets.right` / 2), so it is aligned with the center of the inset bounds
+	///    of the target container.
 	///
 	/// - Parameters:
-	///   - view: The view to align.
-	///   - parent: Where  to align the view to, usually the/a parent.
+	///   - view: The view (or layout guide) to align.
+	///   - another: The view (or layout guide) where to align the `view` to.
 	///   - horizontally: How to horizontally align the view. Defaults to `.none`.
 	///   - vertically: How to vertically align the view. Defaults to `.none`.
 	///   - insets: The insets to apply to the alignment.
 	public static func align(
-		view: UIView,
-		to parent: UIView,
+		view: Tack.ViewOrLayoutGuide,
+		to another: Tack.ViewOrLayoutGuide,
 		horizontally: HorizontalAlignmentPolicy = .none,
 		vertically: VerticalAlignmentPolicy = .none,
 		insets: UIEdgeInsets = .zero
 	) {
-		
 		Tack.activate(Tack.constraints(
 			aligning: view,
-			to: parent,
+			to: another,
 			horizontally: horizontally,
 			vertically: vertically,
 			insets: insets
 		))
 	}
-	
-	/// Align a view to a layout guide, e.g. `view.safeAreaLayoutGuide`, using a horizontal and vertical alignment
-	/// policy. For more info look at the `align(view: UIView, to: UIView...` documentation.
-	public static func align(
-		view: UIView,
-		to parent: UILayoutGuide,
-		horizontally: HorizontalAlignmentPolicy = .none,
-		vertically: VerticalAlignmentPolicy = .none,
-		insets: UIEdgeInsets = .zero
-	) {
-		
-		Tack.activate(constraints(
-			aligning: view,
-			to: parent,
-			horizontally: horizontally,
-			vertically: vertically,
-			insets: insets
-		))
-	}
-	
+
 	/// Return the constraints normally applied by `Tack.align()`. For more info, look at that doc-block.
 	/// - Returns: An array containing the constraints
 	public static func constraints(
-		aligning view: UIView,
-		to parent: UIView,
+		aligning view: Tack.ViewOrLayoutGuide,
+		to another: Tack.ViewOrLayoutGuide,
 		horizontally: HorizontalAlignmentPolicy = .none,
 		vertically: VerticalAlignmentPolicy = .none,
 		insets: UIEdgeInsets = .zero
 	) -> [NSLayoutConstraint] {
 		
-		return _constraints(aligning: view, parent: parent, h: horizontally, v: vertically, insets: insets)
+		return _constraints(aligning: view, another: another, h: horizontally, v: vertically, insets: insets)
 	}
-	
-	/// Return the constraints normally applied by `Tack.align()`. For more info, look at that doc-block.
-	public static func constraints(
-		aligning view: UIView,
-		to parent: UILayoutGuide,
-		horizontally: HorizontalAlignmentPolicy = .none,
-		vertically: VerticalAlignmentPolicy = .none,
-		insets: UIEdgeInsets = .zero
-	) -> [NSLayoutConstraint] {
-		
-		return _constraints(aligning: view, parent: parent, h: horizontally, v: vertically, insets: insets)
-	}
-	
+
 	/// Return an array with all the constraints for aligning a view, with type erased parent.
 	fileprivate static func _constraints(
-		aligning view: UIView,
-		parent: Any,
+		aligning view: Any,
+		another: Any,
 		h: HorizontalAlignmentPolicy,
 		v: VerticalAlignmentPolicy,
 		insets: UIEdgeInsets
@@ -121,11 +74,11 @@ extension Tack {
 		case .none:
 			break
 		case .center, .golden:
-			constraints = centerConstraints(view: view, parent: parent, policy: h, insets: insets)
+			constraints = centerConstraints(view: view, another: another, policy: h, insets: insets)
 		case .fill:
-			constraints = fillConstraints(view: view, parent: parent, policy: h, insets: insets)
+			constraints = fillConstraints(view: view, another: another, policy: h, insets: insets)
 		case .left, .leading, .right, .trailing:
-			constraints = pinConstraints(view: view, parent: parent, policy: h, insets: insets)
+			constraints = pinConstraints(view: view, another: another, policy: h, insets: insets)
 		}
 		
 		switch v {
@@ -133,25 +86,25 @@ extension Tack {
 			break
 		case .center, .golden:
 			constraints.append(contentsOf:
-				centerConstraints(view: view, parent: parent, policy: v, insets: insets)
+				centerConstraints(view: view, another: another, policy: v, insets: insets)
 			)
 		case .fill:
 			constraints.append(contentsOf:
-				fillConstraints(view: view, parent: parent, policy: v, insets: insets)
+				fillConstraints(view: view, another: another, policy: v, insets: insets)
 			)
 		case .top, .firstBaseline, .bottom, .lastBaseline:
 			constraints.append(contentsOf:
-				pinConstraints(view: view, parent: parent, policy: v, insets: insets)
+				pinConstraints(view: view, another: another, policy: v, insets: insets)
 			)
 		}
 		
 		return constraints
 	}
 	
-	/// Return constratins to pin a view to its parent and make sure it stays within bounds.
+	/// Return constrains to pin a view to its parent and make sure it stays within bounds.
 	private static func pinConstraints(
-		view: UIView,
-		parent: Any,
+		view: Any,
+		another: Any,
 		policy: AlignmentPolicy,
 		insets: UIEdgeInsets
 	) -> [NSLayoutConstraint] {
@@ -160,14 +113,14 @@ extension Tack {
 			NSLayoutConstraint(
 				item: view, attribute: policy.attribute(),
 				relatedBy: .equal,
-				toItem: parent, attribute: policy.attribute(),
+				toItem: another, attribute: policy.attribute(),
 				multiplier: 1, constant: policy.inset(from: insets)
 			),
 			// We want the view to stay in-bounds.
 			NSLayoutConstraint(
 				item: view, attribute: policy.inverseAttribute(),
 				relatedBy: policy.inBoundsRelation(),
-				toItem: parent, attribute: policy.inverseAttribute(),
+				toItem: another, attribute: policy.inverseAttribute(),
 				multiplier: 1, constant: policy.inverseInset(from: insets)
 			)
 		]
@@ -175,8 +128,8 @@ extension Tack {
 	
 	/// Return constraints to fill a view in its parent.
 	private static func fillConstraints(
-		view: UIView,
-		parent: Any,
+		view: Any,
+		another: Any,
 		policy: AlignmentPolicy,
 		insets: UIEdgeInsets
 	) -> [NSLayoutConstraint] {
@@ -185,13 +138,13 @@ extension Tack {
 			NSLayoutConstraint(
 				item: view, attribute: policy.attribute(),
 				relatedBy: .equal,
-				toItem: parent, attribute: policy.attribute(),
+				toItem: another, attribute: policy.attribute(),
 				multiplier: 1, constant: policy.inset(from: insets)
 			),
 			NSLayoutConstraint(
 				item: view, attribute: policy.inverseAttribute(),
 				relatedBy: .equal,
-				toItem: parent, attribute: policy.inverseAttribute(),
+				toItem: another, attribute: policy.inverseAttribute(),
 				multiplier: 1, constant: -policy.inverseInset(from: insets)
 			)
 		]
@@ -199,8 +152,8 @@ extension Tack {
 	
 	/// Return constraints to center a view in it's parent, making sure it's in bounds, handles golden ratio as well.
 	private static func centerConstraints(
-		view: UIView,
-		parent: Any,
+		view: Any,
+		another: Any,
 		policy: AlignmentPolicy,
 		insets: UIEdgeInsets
 	) -> [NSLayoutConstraint] {
@@ -212,105 +165,121 @@ extension Tack {
 		let multiplier: CGFloat
 		
 		if case let vertical as VerticalAlignmentPolicy = policy {
+
 			leadingAttr = .top
 			leadingInset = insets.top
 			trailingAttr = .bottom
 			trailingInset = insets.bottom
 			
 			multiplier = vertical == .golden ? centerMultiplier(ratio: inverseGolden) : 1
-		} else if case let horizonal as HorizontalAlignmentPolicy = policy {
+
+		} else if case let horizontal as HorizontalAlignmentPolicy = policy {
+
 			leadingAttr = .left
 			leadingInset = insets.left
 			trailingAttr = .right
 			trailingInset = insets.right
 			
-			multiplier = horizonal == .golden ? centerMultiplier(ratio: inverseGolden) : 1
+			multiplier = horizontal == .golden ? centerMultiplier(ratio: inverseGolden) : 1
+
 		} else {
-			preconditionFailure("Policy should be Horizonal or VerticalAlignmentPolicy")
+			preconditionFailure()
 		}
 		
 		return [
 			NSLayoutConstraint(
 				item: view, attribute: policy.attribute(),
 				relatedBy: .equal,
-				toItem: parent, attribute: policy.attribute(),
+				toItem: another, attribute: policy.attribute(),
 				multiplier: multiplier, constant: policy.inset(from: insets)
 			),
 			// We want the view to stay in-bounds.
 			NSLayoutConstraint(
 				item: view, attribute: leadingAttr,
 				relatedBy: .greaterThanOrEqual,
-				toItem: parent, attribute: leadingAttr,
+				toItem: another, attribute: leadingAttr,
 				multiplier: 1, constant: leadingInset
 			),
 			NSLayoutConstraint(
 				item: view, attribute: trailingAttr,
 				relatedBy: .lessThanOrEqual,
-				toItem: parent, attribute: trailingAttr,
+				toItem: another, attribute: trailingAttr,
 				multiplier: 1, constant: -trailingInset
 			)
 		]
 	}
-	
-	/**
-	 * Suppose you need to contrain a view so its center divides its container in certain ratio different from 1:1
-	 * (e.g. golden section):
-	 *
-	 *  ┌─────────┐ ◆
-	 *  │         │ │
-	 *  │         │ │ a
-	 *  │┌───────┐│ │
-	 * ─│┼ ─ ─ ─ ┼│─◆   ratio = a / b
-	 *  │└───────┘│ │
-	 *  │         │ │
-	 *  │         │ │
-	 *  │         │ │ b
-	 *  │         │ │
-	 *  │         │ │
-	 *  │         │ │
-	 *  └─────────┘ ◆
-	 *
-	 * You cannot put this ratio directly into the `multiplier` parameter of the corresponding NSLayoutConstraints relating
-	 * the centers of the views, because the `multiplier` would be the ratio between the distance to the center
-	 * of the view (`h`) and the distance to the center of the container (`H`) instead:
-	 *
-	 *   ◆ ┌─────────┐ ◆
-	 *   │ │         │ │
-	 *   │ │         │ │ a = h
-	 * H │ │┌───────┐│ │
-	 *   │ │├ ─ ─ ─ ┼│─◆   multiplier = h / H
-	 *   │ │└───────┘│ │   ratio = a / b = h / (2 * H - h)
-	 *   ◆─│─ ─ ─ ─ ─│ │
-	 *     │         │ │
-	 *     │         │ │ b = 2 * H - h
-	 *     │         │ │
-	 *     │         │ │
-	 *     │         │ │
-	 *     └─────────┘ ◆
-	 *
-	 * I.e. the `multiplier` is h / H (assuming the view is the first in the definition of the constraint),
-	 * but the ratio we are interested would be h / (2 * H - h) if expressed in the distances to centers.
-	 *
-	 * If you have a desired ratio and want to get a `multiplier`, which when applied, results in the layout dividing
-	 * the container in this ratio, then you can use this function as shortcut.
-	 *
-	 * Detailed calculations:
-	 * ratio = h / (2 * H - h)  ==>  2 * H * ratio - h * ratio = h  ==>  2 * H * ratio / h - ratio = 1
-	 * ==>  1 + ratio = 2 * H * ratio / h  ==>  (1 + ratio) / (2 * ratio) = H / h
-	 * where H / h is the inverse of our `multiplier`, so the actual multiplier is (2 * ratio) / (1 + ratio).
-	 */
-	
-	private static let golden: CGFloat = 1.47093999 * 1.10 // 110% adjusted.
-	private static let inverseGolden: CGFloat = 1 / golden
-	
+
+	/// Converts a space ratio into a layout constraints `multiplier`.
+	///
+	/// Suppose you need to constrain a view so its center divides its container in certain ratio different
+	/// from 1:1 (e.g. golden section):
+	///
+	/// ```
+	///  ┌─────────┐ ◆
+	///  │         │ │
+	///  │         │ │ a
+	///  │┌───────┐│ │
+	/// ─│┼ ─ ─ ─ ┼│─◆   ratio = a / b
+	///  │└───────┘│ │
+	///  │         │ │
+	///  │         │ │
+	///  │         │ │ b
+	///  │         │ │
+	///  │         │ │
+	///  │         │ │
+	///  └─────────┘ ◆
+	/// ```
+	///
+	/// You cannot put this ratio directly into the `multiplier` parameter of the corresponding
+	/// `NSLayoutConstraints` relating the centers of the views, because the `multiplier` would be the ratio
+	/// between the distance to the center of the view (`h`) and the distance to the center
+	/// of the container (`H`) instead:
+	///
+	/// ```
+	///   ◆ ┌─────────┐ ◆
+	///   │ │         │ │
+	///   │ │         │ │ a = h
+	/// H │ │┌───────┐│ │
+	///   │ │├ ─ ─ ─ ┼│─◆   multiplier = h / H
+	///   │ │└───────┘│ │   ratio = a / b = h / (2 * H - h)
+	///   ◆─│─ ─ ─ ─ ─│ │
+	///     │         │ │
+	///     │         │ │ b = 2 * H - h
+	///     │         │ │
+	///     │         │ │
+	///     │         │ │
+	///     └─────────┘ ◆
+	/// ```
+	///
+	/// I.e. the `multiplier` is `h / H` (assuming the view is the first in the definition of the constraint),
+	/// but the ratio we are interested in would be `h / (2 * H - h)` when expressed in the distances to centers.
+	///
+	/// Calculations:
+	/// ```
+	/// ratio = h / (2 * H - h)  ==>
+	/// 2 * H * ratio - h * ratio = h  ==>
+	/// 2 * H * ratio / h - ratio = 1  ==>
+	/// 1 + ratio = 2 * H * ratio / h  ==>
+	/// (1 + ratio) / (2 * ratio) = H / h
+	/// ```
+	/// where `H / h` is the inverse of our `multiplier`, so the actual multiplier is `(2 * ratio) / (1 + ratio)`.
+	///
+	/// - Parameter ratio: In what ratio you would like the container view to be split by the center of the view
+	///   being aligned (top to bottom or left to right).
 	private static func centerMultiplier(ratio: CGFloat) -> CGFloat {
 		return (2 * ratio) / (1 + ratio)
 	}
+
+	/// The golden ratio constant, `~1.618`.
+	private static let golden: CGFloat = 1.47093999 * 1.10 // 110% adjusted.
+
+	/// The inverse of the golden ratio, `~0.618`.
+	private static let inverseGolden: CGFloat = 1 / golden
 }
 
 internal protocol Tack_AlignmentPolicy {
 
-	/// Return the attibute for this alignment, so `.left = .left / .top = .top`. Mapping the types basically.
+	/// Return the attribute for this alignment, so `.left = .left / .top = .top`. Mapping the types basically.
 	/// For fill constraints return the 'leading' edge.
 	func attribute() -> NSLayoutConstraint.Attribute
 	

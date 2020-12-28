@@ -17,18 +17,19 @@ class TackBoxTestCase: BaseTestCase {
 		// The exact form this state info is maintained in is up to the view. Let's have a simple flag for now.
 		var shouldDisplayViewB = false
 
-		// And then the usual updateContraints() is overriden:
+		// And then the usual updateConstraints() is overridden:
 		func updateConstraints() {
 
 			// (With `super.updateConstraints()` of course.)
 
 			// We're getting access to the box first.
-			// This ensures that previous dynamic constraints will be deactivated (something that's forgotten sometimes)
+			// This ensures that previous dynamic constraints will be deactivated
+			// (something that's forgotten sometimes which alone can be the reason to use this helper)
 			// and the new ones will be activated at once before leaving updateConstraints().
 			let box = tackBox.open()
 
 			// Some of the constraints exist in all the states.
-			// (The code creating constraints won't execute the second time, it's an autoclosure here.)
+			// (The code creating constraints won't execute the second time, it's an auto-closure here.)
 			box.activateOnce(Tack.constraints(
 				.H(|-(padding)-viewA)
 			))

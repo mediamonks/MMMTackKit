@@ -49,6 +49,33 @@ public func ^(padding: _Tack.Padding, priority: CGFloat) -> _Tack.Padding {
 	}
 }
 
+// We want to support both UILayoutGuide and UIView.
+
+extension Tack {
+	/// You can use a `UIView` or a `UILayoutGuide` everywhere this protocol is expected.
+	public typealias ViewOrLayoutGuide = MMMTackKitViewOrLayoutGuide
+}
+
+public protocol MMMTackKitViewOrLayoutGuide: AnyObject {}
+
+extension UIView: Tack.ViewOrLayoutGuide {}
+extension UILayoutGuide: Tack.ViewOrLayoutGuide {}
+
+extension Tack.ViewOrLayoutGuide {
+	// Note that I don't want this to be a part of the protocol and further clutter the namespace.
+	fileprivate var superview: UIView? {
+		switch self {
+		case let v as UIView:
+			return v.superview
+		case let g as UILayoutGuide:
+			return g.owningView
+		default:
+			assertionFailure("\(type(of: self)) is not not supported to be \(Tack.ViewOrLayoutGuide.self)")
+			return nil
+		}
+	}
+}
+
 // Superview pins.
 
 prefix operator |-
@@ -64,7 +91,7 @@ public prefix func |- (padding: _Tack.Padding) -> _Tack.SuperviewPadding {
 	return .init(padding: padding)
 }
 
-public func - (lhs: _Tack.SuperviewPadding, view: UIView) -> Tack.Chain {
+public func - (lhs: _Tack.SuperviewPadding, view: Tack.ViewOrLayoutGuide) -> Tack.Chain {
 	return .init(
 		pairs: [.init(
 			lhs: .init(.leading, .superview, view),
@@ -77,15 +104,15 @@ public func - (lhs: _Tack.SuperviewPadding, view: UIView) -> Tack.Chain {
 
 // [viewA]-(padding)-[viewB]
 
-public func - (view: UIView, rhs: _Tack.Padding) -> _Tack.ViewPadding {
+public func - (view: Tack.ViewOrLayoutGuide, rhs: _Tack.Padding) -> _Tack.ViewPadding {
 	return .init(view: view, padding: rhs)
 }
 
-public func - (view: UIView, rhs: CGFloat) -> _Tack.ViewPadding {
+public func - (view: Tack.ViewOrLayoutGuide, rhs: CGFloat) -> _Tack.ViewPadding {
 	return .init(view: view, padding: .equal(rhs, .required))
 }
 
-public func - (lhs: _Tack.ViewPadding, view: UIView) -> Tack.Chain {
+public func - (lhs: _Tack.ViewPadding, view: Tack.ViewOrLayoutGuide) -> Tack.Chain {
 	return .init(
 		pairs: [.init(
 			lhs: .init(.trailing, .this, lhs.view),
@@ -104,7 +131,7 @@ public func - (chain: Tack.Chain, rhs: CGFloat) -> _Tack.ChainPadding {
 	return .init(chain: chain, padding: .equal(rhs, .required))
 }
 
-public func - (lhs: _Tack.ChainPadding, view: UIView) -> Tack.Chain {
+public func - (lhs: _Tack.ChainPadding, view: Tack.ViewOrLayoutGuide) -> Tack.Chain {
 	return .init(
 		pairs: lhs.chain.pairs + [.init(
 			lhs: lhs.chain.last,
@@ -125,7 +152,7 @@ public postfix func -| (padding: CGFloat) -> _Tack.PaddingSuperview {
 	return .init(padding: .equal(padding, .required))
 }
 
-public func - (view: UIView, rhs: _Tack.PaddingSuperview) -> Tack.Chain {
+public func - (view: Tack.ViewOrLayoutGuide, rhs: _Tack.PaddingSuperview) -> Tack.Chain {
 	return .init(
 		pairs: [.init(
 			lhs: .init(.trailing, .this, view),
@@ -159,7 +186,7 @@ public postfix func -<| (padding: _Tack.Padding) -> _Tack.PaddingSuperviewSafeAr
 	return .init(padding: padding)
 }
 
-public func - (view: UIView, rhs: _Tack.PaddingSuperviewSafeArea) -> Tack.Chain {
+public func - (view: Tack.ViewOrLayoutGuide, rhs: _Tack.PaddingSuperviewSafeArea) -> Tack.Chain {
 	return .init(
 		pairs: [.init(
 			lhs: .init(.trailing, .this, view),
@@ -191,7 +218,7 @@ public prefix func |>- (padding: _Tack.Padding) -> _Tack.PaddingSuperviewSafeAre
 	return .init(padding: padding)
 }
 
-public func - (lhs: _Tack.PaddingSuperviewSafeArea, view: UIView) -> Tack.Chain {
+public func - (lhs: _Tack.PaddingSuperviewSafeArea, view: Tack.ViewOrLayoutGuide) -> Tack.Chain {
 	return .init(
 		pairs: [.init(
 			lhs: .init(.leading, .safeAreaOfSuperview, view),
@@ -316,13 +343,13 @@ public enum Tack {
 			}
 
 			if alignment != .notAnAttribute {
-				var views: [UIView] = []
+				var views: [Tack.ViewOrLayoutGuide] = []
 				for pair in pairs {
 					let last = views.last
-					if pair.lhs.ref == .this && pair.lhs.view != last {
+					if pair.lhs.ref == .this && pair.lhs.view !== last {
 						views.append(pair.lhs.view)
 					}
-					if pair.rhs.ref == .this && pair.lhs.view != last {
+					if pair.rhs.ref == .this && pair.lhs.view !== last {
 						views.append(pair.rhs.view)
 					}
 				}
@@ -360,7 +387,7 @@ public enum _Tack {
 	}
 
 	public struct ViewPadding {
-		let view: UIView
+		let view: Tack.ViewOrLayoutGuide
 		let padding: Padding
 	}
 
@@ -386,9 +413,9 @@ public enum _Tack {
 
 		let side: Side
 		let ref: ViewRef
-		let view: UIView
+		let view: Tack.ViewOrLayoutGuide
 
-		init(_ side: Side, _ ref: ViewRef, _ view: UIView) {
+		init(_ side: Side, _ ref: ViewRef, _ view: Tack.ViewOrLayoutGuide) {
 			self.side = side
 			self.ref = ref
 			self.view = view
