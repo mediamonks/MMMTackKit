@@ -264,13 +264,6 @@ class TackTestCase: BaseTestCase {
 	
 	func testAlignmentHelpers() {
 		
-		// No specification given, should not place any constraints.
-		// TODO: maybe should be an illegal combination instead or better have 3 versions of that excluding the one without labels?
-		assertEqualConstraints(
-			Tack.constraints(aligning: viewA, to: container),
-			[]
-		)
-		
 		assertEqualConstraints(
 			Tack.constraints(aligning: viewA, to: container, horizontally: .fill),
 			[
