@@ -27,13 +27,13 @@ extension Tack {
 	/// - Parameters:
 	///   - view: The view (or layout guide) to align.
 	///   - another: The view (or layout guide) where to align the `view` to.
-	///   - horizontally: How to horizontally align the view. Defaults to `.none`.
+	///   - horizontally: How to horizontally align the view.
 	///   - vertically: How to vertically align the view. Defaults to `.none`.
 	///   - insets: The insets to apply to the alignment.
 	public static func align(
 		view: Tack.ViewOrLayoutGuide,
 		to another: Tack.ViewOrLayoutGuide,
-		horizontally: HorizontalAlignmentPolicy = .none,
+		horizontally: HorizontalAlignmentPolicy,
 		vertically: VerticalAlignmentPolicy = .none,
 		insets: UIEdgeInsets = .zero
 	) {
@@ -45,18 +45,61 @@ extension Tack {
 			insets: insets
 		))
 	}
+	
+	/// Aligns a view (or a layout guide) relative to another view (or layout guide) using a few simple
+	/// alignment policies like "center" or "fill".
+	///
+	/// Note that the view/guide being aligned does not have to be a child of the target view.
+	///
+	/// The insets are treated as if they were applied to the bounds of the target container first.
+	///
+	/// For example, with insets being `(20, 0, 10, 0)`:
+	///
+	/// 1) a horizontal `.fill` alignment policy  will keep the expected 20pt padding on the left and 10pt
+	///    on the right of the view being aligned;
+	///
+	/// 2) and a horizontal `.center` alignment policy (in addition to not being allowed to be closer than 20/10pt
+	///    to the sides of the container) will cause the center of the view being aligned to be shifted by 15pt
+	///    (`insets.left - insets.right` / 2), so it is aligned with the center of the inset bounds
+	///    of the target container.
+	///
+	/// - Parameters:
+	///   - view: The view (or layout guide) to align.
+	///   - another: The view (or layout guide) where to align the `view` to.
+	///   - vertically: How to vertically align the view. Defaults to `.none`.
+	///   - insets: The insets to apply to the alignment.
+	public static func align(
+		view: Tack.ViewOrLayoutGuide,
+		to another: Tack.ViewOrLayoutGuide,
+		vertically: VerticalAlignmentPolicy,
+		insets: UIEdgeInsets = .zero
+	) {
+		Tack.align(view: view, to: another, horizontally: .none, vertically: vertically, insets: insets)
+	}
 
 	/// Return the constraints normally applied by `Tack.align()`. For more info, look at that doc-block.
 	/// - Returns: An array containing the constraints
 	public static func constraints(
 		aligning view: Tack.ViewOrLayoutGuide,
 		to another: Tack.ViewOrLayoutGuide,
-		horizontally: HorizontalAlignmentPolicy = .none,
+		horizontally: HorizontalAlignmentPolicy,
 		vertically: VerticalAlignmentPolicy = .none,
 		insets: UIEdgeInsets = .zero
 	) -> [NSLayoutConstraint] {
 		
 		return _constraints(aligning: view, another: another, h: horizontally, v: vertically, insets: insets)
+	}
+
+	/// Return the constraints normally applied by `Tack.align()`. For more info, look at that doc-block.
+	/// - Returns: An array containing the constraints
+	public static func constraints(
+		aligning view: Tack.ViewOrLayoutGuide,
+		to another: Tack.ViewOrLayoutGuide,
+		vertically: VerticalAlignmentPolicy,
+		insets: UIEdgeInsets = .zero
+	) -> [NSLayoutConstraint] {
+		
+		return constraints(aligning: view, to: another, horizontally: .none, vertically: vertically, insets: insets)
 	}
 
 	/// Return an array with all the constraints for aligning a view, with type erased parent.
