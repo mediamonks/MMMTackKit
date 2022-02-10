@@ -18,5 +18,5 @@ jobs:
         run: swift package generate-xcodeproj
       - name: Test
         run: |
-          device=`instruments -s -devices | grep -oE 'iPhone.*?[^\(]+' | head -1 | awk '{$1=$1;print}'`
+          device=`xcrun simctl list | grep -oE 'iPhone.*?[^\(]+' | head -1 | awk '{$1=$1;print}'`
           xcodebuild test -destination "name=$device" -scheme 'MMMTackKit-Package'
