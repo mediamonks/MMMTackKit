@@ -249,15 +249,31 @@ public enum Tack {
 		NSLayoutConstraint.activate(chains.flatMap { $0.constraints })
 	}
 
+	public static func activate(@Tack.Builder constraints: () -> [NSLayoutConstraint]) {
+		NSLayoutConstraint.activate(constraints())
+	}
+
 	public static func constraints(_ chains: Tack.OrientedChain...) -> [NSLayoutConstraint] {
 		chains.flatMap { $0.constraints }
 	}
+	
+	public static func constraints(
+		@Tack.Builder constraints: () -> [NSLayoutConstraint]
+	) -> [NSLayoutConstraint] {
+		constraints()
+	}
 
-	public static func H(_ chain: Tack.Chain, alignAll alignment: Tack.VerticalAlignment = .none) -> [NSLayoutConstraint] {
+	public static func H(
+		_ chain: Tack.Chain,
+		alignAll alignment: Tack.VerticalAlignment = .none
+	) -> [NSLayoutConstraint] {
 		return chain.resolved(.horizontal, alignment: alignment.attribute())
 	}
 	
-	public static func V(_ chain: Tack.Chain, alignAll alignment: Tack.HorizontalAlignment = .none) -> [NSLayoutConstraint] {
+	public static func V(
+		_ chain: Tack.Chain,
+		alignAll alignment: Tack.HorizontalAlignment = .none
+	) -> [NSLayoutConstraint] {
 		return chain.resolved(.vertical, alignment: alignment.attribute())
 	}
 

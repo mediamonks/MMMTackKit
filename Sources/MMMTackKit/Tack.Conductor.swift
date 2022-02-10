@@ -63,6 +63,11 @@ extension Tack {
 			add(constraints: constraints.flatMap { $0 }, state: state)
 		}
 		
+		/// Add constraints to the `Conductor` for a given state using the ``Tack.Builder``.
+		public func add(state: Statable, @Tack.Builder constraints: () -> [NSLayoutConstraint]) {
+			add(constraints: constraints(), state: state)
+		}
+		
 		public subscript(states: Statable...) -> [NSLayoutConstraint] {
 			set {
 				add(states: Set<Statable>(states), constraints: newValue)
@@ -76,6 +81,13 @@ extension Tack {
 		public func add(states: Set<Statable>, constraints: [NSLayoutConstraint]...) {
 			states.forEach { state in
 				add(constraints: constraints.flatMap { $0 }, state: state)
+			}
+		}
+		
+		/// Add constraints to the `Conductor` for a given set of states using the ``Tack.Builder``.
+		public func add(states: Set<Statable>, @Tack.Builder constraints: () -> [NSLayoutConstraint]) {
+			states.forEach { state in
+				add(constraints: constraints(), state: state)
 			}
 		}
 		
