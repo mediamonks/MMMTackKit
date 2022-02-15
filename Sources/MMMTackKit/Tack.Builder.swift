@@ -5,6 +5,10 @@
 
 import UIKit
 
+public protocol Tack_Builder_Block {
+	func asTackComponents() -> [NSLayoutConstraint]
+}
+
 extension Tack {
 	
 	@resultBuilder
@@ -29,25 +33,41 @@ extension Tack {
 	///	}
 	/// ```
 	public struct Builder {
+	
+		public typealias Block = Tack_Builder_Block
 		
-		public static func buildBlock(_ components: [NSLayoutConstraint]...) -> [NSLayoutConstraint] {
+		public static func buildBlock(_ components: Block...) -> [NSLayoutConstraint] {
 			return buildArray(components)
 		}
 		
-		public static func buildOptional(_ component: [NSLayoutConstraint]?) -> [NSLayoutConstraint] {
-			return component ?? []
+		public static func buildOptional(_ component: Block?) -> [NSLayoutConstraint] {
+			return component.map { $0.asTackComponents() } ?? []
 		}
 		
-		public static func buildEither(first component: [NSLayoutConstraint]) -> [NSLayoutConstraint] {
-			return component
+		public static func buildEither(first component: Block) -> [NSLayoutConstraint] {
+			return component.asTackComponents()
 		}
 		
-		public static func buildEither(second component: [NSLayoutConstraint]) -> [NSLayoutConstraint] {
-			return component
+		public static func buildEither(second component: Block) -> [NSLayoutConstraint] {
+			return component.asTackComponents()
 		}
 		
-		public static func buildArray(_ components: [[NSLayoutConstraint]]) -> [NSLayoutConstraint] {
-			return components.flatMap { $0 }
+		public static func buildArray(_ components: [Block]) -> [NSLayoutConstraint] {
+			return components.flatMap { $0.asTackComponents() }
 		}
+	}
+}
+
+extension Array: Tack.Builder.Block where Element == NSLayoutConstraint {
+	
+	public func asTackComponents() -> [NSLayoutConstraint] {
+		return self
+	}
+}
+
+extension NSLayoutConstraint: Tack.Builder.Block {
+	
+	public func asTackComponents() -> [NSLayoutConstraint] {
+		return [self]
 	}
 }
