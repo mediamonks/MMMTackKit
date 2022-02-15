@@ -249,6 +249,7 @@ public enum Tack {
 		NSLayoutConstraint.activate(chains.flatMap { $0.constraints })
 	}
 
+	/// Activate an array of constraints using the ``Builder``.
 	public static func activate(@Tack.Builder constraints: () -> [NSLayoutConstraint]) {
 		NSLayoutConstraint.activate(constraints())
 	}
@@ -257,6 +258,7 @@ public enum Tack {
 		chains.flatMap { $0.constraints }
 	}
 	
+	/// Build an array of constraints using the ``Builder``.
 	public static func constraints(
 		@Tack.Builder constraints: () -> [NSLayoutConstraint]
 	) -> [NSLayoutConstraint] {

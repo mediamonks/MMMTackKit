@@ -11,9 +11,8 @@ public protocol Tack_Builder_Block {
 
 extension Tack {
 	
-	@resultBuilder
 	/// A resultBuilder that allows you to activate / create chains. This allows you to use conditionals inside your
-	/// ``Tack.activate`` or ``Tack.constraints`` block.
+	/// ``activate(_:)`` or ``constraints(_:)`` block.
 	///
 	/// **Example**
 	/// ```
@@ -32,6 +31,7 @@ extension Tack {
 	///		}
 	///	}
 	/// ```
+	@resultBuilder
 	public struct Builder {
 	
 		public typealias Block = Tack_Builder_Block
