@@ -11,11 +11,17 @@ Type-safe replacement for Auto Layout Visual Formatting Language.
 
 Podfile:
 
-```
+```ruby
 source 'https://github.com/mediamonks/MMMSpecs.git'
 source 'https://github.com/CocoaPods/Specs.git'
 ...
 pod 'MMMTackKit'
+```
+
+SPM:
+
+```swift
+.package(url: "https://github.com/mediamonks/MMMTackKit", .upToNextMajor(from: "0.8.1"))
 ```
 
 ## Usage
