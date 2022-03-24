@@ -8,16 +8,51 @@ import UIKit
 extension Tack {
 	
 	/// The `Conductor` can be used to orchestrate a set of constraints, e.g. between state changes. The main goal is to avoid
-	/// unneccessary, and complex / error prone, if/else chains in `UIView.updateConstraints()`.
+	/// unnecessary, and complex / error prone, if/else chains in `UIView.updateConstraints()`.
 	///
 	/// You should supply a `Hashable` as generic constraint, this usually ends up being an `enum State {}`, but
 	/// could be identifiers or something similar.
 	///
 	/// Start by adding constraints for a certain state, after that you can safely set `.activeState` to update the active
 	/// state. Make sure to call `setNeedsUpdateConstraints()` after you set a new state.
-	///
+    ///
 	/// Finally you should override your `updateConstraints()` method, and call `Conductor.updateConstraints()`
-	/// to actually activate/deactive the constraints.
+	/// to actually activate/de-active the constraints.
+    ///
+    /// **Simple example:**
+    /// ```
+    /// // Store this as a property on your view.
+    /// let conductor = Tack.Conductor(activeState: MyState.initialState)
+    ///
+    /// // In your init() call, add the constraints to the conductor.
+    /// // On `initialState` viewA is pinned to top with viewB below it.
+    /// conductor[.initialState] = Tack.constraints(
+    ///     .V(|-(8)-viewA-(8)-viewB-(>=8)-|)
+    /// )
+    ///
+    /// // On `secondState` viewB is pinned to bottom with viewA above it.
+    /// conductor[.secondState] = Tack.constraints(
+    ///     .V(|-(>=8)-viewA-(8)-viewB-(8)-|)
+    /// )
+    ///
+    /// // Make sure to override updateConstraints()
+    /// override func updateConstraints() {
+    ///     super.updateConstraints()
+    ///     conductor.updateConstraints()
+    /// }
+    ///
+    /// // Somewhere where you update the viewState:
+    /// func updateUI() {
+    ///
+    ///     if someCondition {
+    ///         conductor.activeState = .secondState
+    ///     } else {
+    ///         conductor.activeState = .initialState
+    ///     }
+    ///
+    ///     setNeedsUpdateConstraints()
+    /// }
+    /// ```
 	final public class Conductor<Statable: Hashable> {
 		
 		private var storage = [Statable: [NSLayoutConstraint]]()
