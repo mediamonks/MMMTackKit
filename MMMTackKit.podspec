@@ -11,7 +11,7 @@ Pod::Spec.new do |s|
 	s.description =  s.summary
 	s.homepage = "https://github.com/mediamonks/#{s.name}"
 	s.license = "MIT"
-	s.authors = "MediaMonks"
+	s.authors = "Media.Monks"
 	s.source = { :git => "https://github.com/mediamonks/#{s.name}.git", :tag => s.version.to_s }
 
 	s.ios.deployment_target = '11.0'
