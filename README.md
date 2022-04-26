@@ -12,8 +12,17 @@ Type-safe replacement for Auto Layout Visual Formatting Language.
 Podfile:
 
 ```ruby
+pod 'MMMTackKit'
+```
+
+If you happen to be working with us (or you are
+[aspiring to do so](https://media.monks.com/careers)),then you probably want to
+add our MMMSpecs as a source to your Podfile so you get easier access to the
+rest of our pods.
+
+```ruby
 source 'https://github.com/mediamonks/MMMSpecs.git'
-source 'https://github.com/CocoaPods/Specs.git'
+source 'https://cdn.cocoapods.org/'
 ...
 pod 'MMMTackKit'
 ```
