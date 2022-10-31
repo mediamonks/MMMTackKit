@@ -7,9 +7,9 @@ import UIKit
 
 extension Tack {
 
-	/// Simplifies management of permanent vs dynamic constraints in `updateContraints()`.
+	/// Simplifies management of permanent vs dynamic constraints in `updateConstraints()`.
 	///
-	/// This is another take on the `Box` concept following the older `updateContraints()` pattern we used.
+	/// This is another take on the `Box` concept following the older `updateConstraints()` pattern we used.
 	/// (We are evaluating both of them here as one or another might feel more natural depending on the use case.)
 	///
 	/// # Usage:
@@ -149,14 +149,21 @@ extension Tack {
 
 			/// Activates the given constraints and adds them into the box to automatically deactivate
 			/// the next time the box is opened.
-			///
-			/// (No overload accepting OrientedChain here to keep it consistent with activateOnce() where we cannot
-			/// add an overload due to the use of auto-closures.)
 			public func activate(_ constraints: [NSLayoutConstraint]) {
 				// Again, we could activate them all at once when the box is closed,
 				// but it seems like this has no benefits and might cause confusion when debugging.
 				NSLayoutConstraint.activate(constraints)
 				box.constraints.append(contentsOf: constraints)
+			}
+			
+			/// Activates the given constraints and adds them into the box to automatically deactivate
+			/// the next time the box is opened.
+			///
+			/// Note that I was hesitant adding this overload to keep the interface minimal and consistent
+			/// with `activateOnce` (where a chain cannot be used directly)
+			/// but found using `box.activate(Tack.constraints(` too often.
+			public func activate(_ chains: Tack.OrientedChain...) {
+				activate(Tack.constraints(chains))
 			}
 
 			fileprivate var closed: Bool = false

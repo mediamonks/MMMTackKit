@@ -258,6 +258,10 @@ public enum Tack {
 		chains.flatMap { $0.constraints }
 	}
 	
+	internal static func constraints(_ chains: [Tack.OrientedChain]) -> [NSLayoutConstraint] {
+		chains.flatMap { $0.constraints }
+	}
+	
 	/// Build an array of constraints using the ``Builder``.
 	public static func constraints(
 		@Tack.Builder constraints: () -> [NSLayoutConstraint]
